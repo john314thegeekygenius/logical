@@ -1,0 +1,71 @@
+<!--
+    * Logical - A digital logic simulator for HTML written in Javascript (yuck) 
+    * 
+    * Written by: The Wizard
+    *
+    * Aug. 4, 2023
+    *
+    * This project is under the GPT-3 license which states:
+    *
+    * The Generic Free and Open Source Software License is designed to 
+    * promote the principles of free and open-source software. 
+    * It allows users to use, modify, and distribute the software freely. 
+    * Users can create derivative works, but they must provide proper 
+    * attribution and retain the original copyright notice and 
+    * license in any redistributed copies. 
+    * The license also mandates the availability of the source code for 
+    * distributed versions or modifications. 
+    * It disclaims any warranties and limits the author's liability for damages. 
+    * The license contains additional terms, including compliance with laws, 
+    * adherence to community guidelines, and indemnification of the author. 
+    * It is governed by the laws of a specified jurisdiction and is subject 
+    * to updates by the author.
+    *
+-->
+<!DOCTYPE html>
+<html lang="en" height="100%" width="100%">
+    <head>
+        <meta charset="utf-8">
+        <title>Logical</title>
+        <link rel="stylesheet" href="css/style-dark.css"></link>
+        <script src="js/jquery-3.7.0.js"></script>
+        <script src="js/require.js"></script>
+    </head>
+    <body width="100%" height="100%">
+        <!-- Create a menu bar at the top -->
+        <div class="menu-bar">
+            <button id="newfile" class="menu-item" onclick="NewCircuit()">New</button>
+            <button id="openfile" class="menu-item" onclick="LoadCircuit()">Load</button>
+            <button id="savefile" class="menu-item" onclick="SaveCircuit()">Save</button>
+        </div>
+        <!-- Create an area for the canvas -->
+        <div class="user-area">
+            <!-- The canvas to draw inside -->
+            <svg id="svg-ctx" class="svg-canvas" oncontextmenu="return false" width="100%" height="100%"></svg>
+            <!-- Overlay for Frames Per Second -->
+            <svg class="svg-overlay" >
+                <text id="svg-fps" class="svg-over-txt" x="10px" y="20px"></text>
+            </svg>
+        </div>
+        <!-- Create an area for the side bar -->
+        <div class="side-bar">
+            <!-- Search bar -->
+            <input class="search-bar" type="text" autocomplete="off" placeholder="Search" name="search">
+            <!-- List of components -->
+            <ul class="catagory-list" id="cat-list" tabindex="0" role="listbox" >
+            </ul>
+            <!-- List of items using svg icons -->
+            <ul class="svg-item-list" id="svg-listbox" tabindex="0" role="listbox" >
+            </ul>
+        </div>
+        <!-- Create a copyright bar at the bottom because why not? -->
+		<div class="footer-bar">
+            <p class="footer-text">Logical - Digital Logic Simulator Copyright© 2023 Jonathan Clevenger</p>
+        </div>
+        <!-- Run the scripts -->
+        <script type="text/javascript" src="js/gfxapi.js"></script>
+        <script type="text/javascript" src="js/logical/logical.js"></script>
+        <script type="text/javascript" src="js/logical/grender.js"></script>
+        <script type="text/javascript" src="js/runtime.js"></script>
+    </body>
+</html>
