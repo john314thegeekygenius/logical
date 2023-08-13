@@ -33,6 +33,8 @@ Make the user able to rotate gates
 
 Add all respective logic gates and misc items 
 
+Add light mode for weirdos.
+
 
 
 
