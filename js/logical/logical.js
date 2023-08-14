@@ -70,7 +70,7 @@ Logical.prototype.holdItem = function(key1, key2){
 };
 
 Logical.prototype.handleInput = function(){
-    var gs = 800*this.camera.zoom;
+    var gs = 400*this.camera.zoom;
 
     // Zoom in 
     if(g_mouse.wheel < 0){
@@ -203,6 +203,22 @@ Logical.prototype.handleInput = function(){
         this.scrollCamera(0,0);
         g_keys[32].released = false;
     }
+    if(g_keys[46].released === true){
+        var rmi = [];
+        // Find the objects in selected area 
+        for(var i = 0; i < this.circuit.gates.length; i++){
+            var g = this.circuit.gates[i];
+            if(g.selected === true){
+                // Delete that gate 
+                rmi.push(i-rmi.length);
+            }
+        }
+        for(var i = 0; i < rmi.length; i++){
+            this.circuit.gates.splice(rmi[i],1);
+        }
+        g_keys[46].released = false;
+    }
+
     // Make the camera move
     if(Math.abs(this.camera.sx) < 0.1){
         this.camera.sx = 0;
@@ -309,6 +325,8 @@ Logical.prototype.draw = function(){
             this.svg.line(0.0, gy/this.svg.p_height, 1.0, gy/this.svg.p_height);
         }
     }
+    // Rescale into the correct cooords 
+    var gs = 400*this.camera.zoom;
     // Draw any gates
     
     for(var i = 0; i < this.circuit.gates.length; i++){
@@ -359,7 +377,6 @@ Logical.prototype.draw = function(){
     // Draw an object floating above the screen if needed 
     if(this.holding.length ){
         var svgsize = this.holding[2];
-        var gs = 800*this.camera.zoom;
         var mx = g_mouse.x - (svgsize.x + (svgsize.w/2))*25*this.camera.zoom;
         var my = g_mouse.y - (svgsize.y + (svgsize.h/2))*25*this.camera.zoom;
         var mx = Math.floor(mx/gs);
