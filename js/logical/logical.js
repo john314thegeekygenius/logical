@@ -34,7 +34,7 @@ function Logical() {
         cy:0,
         sx:0,
         sy:0,
-        zoom:1/8,
+        zoom:1/32,
     };
 
     this.holding = [];
@@ -45,6 +45,8 @@ function Logical() {
         gates:[],
         wires:[],
     }; // An empty circuit 
+
+    this.select = null;
 };
 
 Logical.prototype.scrollCamera = function(x,y){
@@ -54,30 +56,73 @@ Logical.prototype.scrollCamera = function(x,y){
 
 
 Logical.prototype.holdItem = function(key1, key2){
-    this.holding = [key1, key2];
+    var item = this.getItem(key1, key2 );
+    if(item == undefined){
+        console.error("bad item "+key1+":"+key2);
+    }
+    var svgsize = item["box"];
+    if(svgsize === undefined){
+        console.error("bad box info for "+key1+":"+key2);
+        svgsize = {x:0,y:0,w:0,h:0};
+    }
+    this.holding = [key1, key2, svgsize];
 };
 
 Logical.prototype.handleInput = function(){
-    var gs = 100*this.camera.zoom;
+    var gs = 800*this.camera.zoom;
+
+    // Zoom in 
+    if(g_mouse.wheel < 0){
+        // Zoom in at the mouse (centered)
+        var gx = (g_mouse.x/gs);
+        var gy = (g_mouse.y/gs);
+        this.camera.x -= gx;
+        console.log(gx);
+
+        this.camera.zoom *= 2;
+        this.scene_changed = true;
+    }
+    // Zoom out 
+    if(g_mouse.wheel > 0){
+        this.camera.zoom /= 2;
+        this.scene_changed = true;
+    }
+    if(this.camera.zoom < 1/128){
+        this.camera.zoom = 1/128;
+    }
+    if(this.camera.zoom > 100){
+        this.camera.zoom = 100;
+    }
+
     if(this.holding.length){
         // We need to place a gate down maybe 
-        if(g_mouse.clicked){
-            if(g_mouse.button == 2){
-                this.holding = [];
-                g_mouse.button = -1;
-            }else{
-                this.circuit.gates.push({
-                    x: Math.floor(g_mouse.x/gs)-4,
-                    y:Math.floor(g_mouse.y/gs)-4,
-                    cat:this.holding[0],
-                    key:this.holding[1]
-                });
-                this.scene_changed = true;
-            }
+        if(g_mouse.button == 2){
+            this.holding = [];
+            g_mouse.button = -1;
+        }else if(g_mouse.clicked){
+            var svgsize = this.holding[2];
+            var gs = 800*this.camera.zoom;
+            var mx = g_mouse.x - (svgsize.x + (svgsize.w/2))*25*this.camera.zoom;
+            var my = g_mouse.y - (svgsize.y + (svgsize.h/2))*25*this.camera.zoom;
+            var mx = Math.floor(mx/gs);
+            var my = Math.floor(my/gs);
+            var gx = (mx*gs)-this.camera.x+(this.camera.x%gs);
+            var gy =  (my*gs)-this.camera.y+(this.camera.y%gs);
+            gx /= gs;
+            gy /= gs;
+
+            console.log(gx+" "+gy);
+            this.circuit.gates[this.circuit.gates.length] = {
+                x: gx,
+                y: gy,
+                cat:this.holding[0],
+                key:this.holding[1]
+            };
             g_mouse.clicked = false;
         }
         if(g_keys[27].released){
             this.holding = [];
+            this.scene_changed = true;
             g_keys[27].released = false;
         }
         return;
@@ -87,26 +132,27 @@ Logical.prototype.handleInput = function(){
         this.camera.cy = this.camera.y;
     }
     if(g_mouse.pressed){
-        // Drag controls
-        this.camera.x = (g_mouse.x - g_mouse.cx) + this.camera.cx;
-        this.camera.y = (g_mouse.y - g_mouse.cy) + this.camera.cy;
-        this.scene_changed = true;
+        if(g_keys[16].pressed === true){
+            // Select tool 
+            this.select = {
+                sx: g_mouse.cx,
+                sy: g_mouse.cy,
+                sw: g_mouse.x-g_mouse.cx,
+                sh: g_mouse.y-g_mouse.cy };
+        }else{
+            // Drag controls
+            this.camera.x = (g_mouse.x - g_mouse.cx) + this.camera.cx;
+            this.camera.y = (g_mouse.y - g_mouse.cy) + this.camera.cy;
+            this.scene_changed = true;
+        }
+    }else{
+        // Select any objects 
+        if(this.select !== null){
+            this.select = null;
+        }
     }
-    if(g_mouse.wheel < 0){
-        this.camera.zoom *= 2;
-        this.scene_changed = true;
-    }
-    if(g_mouse.wheel > 0){
-        this.camera.zoom /= 2;
-        this.scene_changed = true;
-    }
-    if(this.camera.zoom < 0.0025){
-        this.camera.zoom = 0.0025;
-    }
-    if(this.camera.zoom > 100){
-        this.camera.zoom = 100;
-    }
-    if(g_keys[32].released){
+
+    if(g_keys[32].released === true){
         // Go back to the center
         this.scrollCamera(0,0);
         g_keys[32].released = false;
@@ -130,30 +176,38 @@ Logical.prototype.handleInput = function(){
     }
 };
 
+Logical.prototype.getItem = function(catagory, tag){
+    var item = gate_json_list[catagory];
+    if(item === undefined){
+        console.error("Bad catagory: "+catagory);
+        return undefined; // Bad item???
+    }
+    item = gate_json_list[catagory][tag];
+    if(item === undefined){
+        console.error("Bad tag: "+tag);
+        return undefined; // Bad item???
+    }
+    return item;
+};
+
 Logical.prototype.drawSVG = function(catagory,tag,x, y){
     if( gate_json_list === undefined){
         console.error("Gates not loaded?");
         return;
     }
     var ts = (this.camera.zoom*100);
-    var tx = (x*ts + this.camera.x);
-    var ty = (y*ts + this.camera.y);
+    var tx = (x + this.camera.x);
+    var ty = (y + this.camera.y);
 
-    var item = gate_json_list[catagory];
-    if(item === undefined){
-        console.error("Bad catagory: "+catagory);
-        return ; // Bad item???
-    }
-    item = gate_json_list[catagory][tag];
-    if(item === undefined){
-        console.error("Bad tag: "+tag);
-        return ; // Bad item???
-    }
+    var item = this.getItem(catagory, tag);
+    if(item === undefined) return; // Bad item 
     var svgthing = item["svg"];
 
     for(var i = 0; i < svgthing.length; i++){
         var p = svgthing[i];
-        this.svg.strokeWeight(12*this.camera.zoom);
+        var sw = 12*this.camera.zoom;
+        if(sw < 1){ sw = 1; }
+        this.svg.strokeWeight(sw);
         this.svg.stroke(g_col_5);
         if(p[0] === "frect" || p[0] === "rect"){
             var px = (p[1]*ts/2.5)+tx;
@@ -184,7 +238,7 @@ Logical.prototype.drawSVG = function(catagory,tag,x, y){
             var pw = (p[3]*ts/2.5)+tx;
             var ph = (p[4]*ts/2.5)+ty;
             if(p[0] === "wline"){
-                this.svg.strokeWeight(24*this.camera.zoom);
+                this.svg.strokeWeight(sw*2);
             }
             this.svg.line(px/this.svg.p_width, py/this.svg.p_height, pw/this.svg.p_width, ph/this.svg.p_height);
         }
@@ -193,12 +247,13 @@ Logical.prototype.drawSVG = function(catagory,tag,x, y){
 
 Logical.prototype.draw = function(){
     // Draw a grid 
-    var gs = 100*this.camera.zoom;
+    var gs = 800*this.camera.zoom;
     var gw = this.svg.p_width/gs;
     var gh = this.svg.p_height/gs;
+    
     this.svg.stroke(g_col_1);
     this.svg.strokeWeight(1);
-    if(this.camera.zoom >= 0.05){
+    if(this.camera.zoom >= 1/64){
         for(var i = -1; i < gw+1; i++){
             var gx = (i*gs)+(this.camera.x%gs);
             this.svg.line(gx/this.svg.p_width, 0.0, gx/this.svg.p_width, 1.0);
@@ -209,28 +264,54 @@ Logical.prototype.draw = function(){
         }
     }
     // Draw any gates
+    
     for(var i = 0; i < this.circuit.gates.length; i++){
         var g = this.circuit.gates[i];
-        this.drawSVG(g.cat,g.key,g.x,g.y);
+        this.drawSVG(g.cat,g.key,g.x*gs,g.y*gs);
     }
 
+    // Draw a select box if needed 
+    if(this.select !== null){
+        var sx = this.select.sx;
+        var sy = this.select.sy;
+        var sw = this.select.sw;
+        var sh = this.select.sh;
+        sx = sy = 0;
+        this.svg.setAlpha(64);
+        this.svg.fill(g_col_6);
+        this.svg.rect(sx,sy,sw,sh);
+        this.svg.setAlpha(255);
+    }
+
+    // Draw an object floating above the screen if needed 
     if(this.holding.length ){
-        var gx = Math.floor(g_mouse.x/gs)-4;
-        var gy = Math.floor(g_mouse.y/gs)-4;
+        var svgsize = this.holding[2];
+        var gs = 800*this.camera.zoom;
+        var mx = g_mouse.x - (svgsize.x + (svgsize.w/2))*25*this.camera.zoom;
+        var my = g_mouse.y - (svgsize.y + (svgsize.h/2))*25*this.camera.zoom;
+        var mx = Math.floor(mx/gs);
+        var my = Math.floor(my/gs);
+        var gx = (mx*gs)-this.camera.x+(this.camera.x%gs);
+        var gy =  (my*gs)-this.camera.y+(this.camera.y%gs);
         // Draw the held item 
         this.drawSVG(this.holding[0], this.holding[1],gx,gy);
-        this.scene_changed = true;
     }
+    this.scene_changed = true;
 };
 
 Logical.prototype.run = function() {
     this.handleInput();
+
     this.draw();
     if(this.scene_changed || this.svg.resized){
         this.scene_changed = false;
+        var startTime = performance.now();
         this.svg.render();
+        var endTime = performance.now();
+        this.svg.drawFTime(endTime-startTime);
     }
     this.svg.clear();
+
     this.svg.drawFPS();
 };
 

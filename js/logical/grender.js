@@ -102,6 +102,12 @@ var DrawSVG = function(catagory,tag){
             miny = Math.min(miny, ph);
         }
     }
+    // Write to the database??? 
+    gate_json_list[catagory][tag]["box"] = { x:minx, 
+                    y:miny,
+                    w:maxx-minx,
+                    h:maxy-miny};
+
     // Center the item
     ts = Math.min(200/maxx, 200/maxy);
     tx = (tw/2) - ((maxx+minx)*ts*20/tw);

@@ -5,14 +5,17 @@
     *
 ***/
 
-var svgc_element = document.querySelector('.svg-canvas');
+var svgc_element = document.getElementById("svg-ctx");
+    //querySelector('.svg-canvas');
 
 // Keyboard stuff 
 // 
-var g_keys = new Array(512).fill({
-        pressed:false,
-        released:false,
-    });
+var g_keys = new Array(256).fill().map(function() {
+    return {
+        pressed: false,
+        released: false,
+    };
+});
 
 document.addEventListener('keydown', onKeyDown, false);
 document.addEventListener('keyup', onKeyReleased, false);
@@ -20,13 +23,11 @@ document.addEventListener('keyup', onKeyReleased, false);
 function onKeyDown(e){
     g_keys[e.keyCode].pressed = true;
     g_keys[e.keyCode].released = false;
-    console.log(e.keyCode);
 };
 
 function onKeyReleased(e){
     g_keys[e.keyCode].pressed = false;
     g_keys[e.keyCode].released = true;
-    console.log(e.keyCode);
 };
 
 // Mouse stuff 
@@ -59,7 +60,7 @@ function onMouseUpdate(e) {
     g_mouse.y = e.offsetY;
     g_mouse.moved = true;
     g_mouse.button = e.button;
-}
+};
 
 function onMouseDown(e){
     if(g_mouse.pressed === false){
@@ -122,46 +123,50 @@ function getRGBstr(val){
 function makeSVG(obj){
     var extra = "";
     var internal = "";
+    var stroke_s = getRGBstr(obj.stroke);
+    var fill_s = getRGBstr(obj.fill);
+    var retstr = "";
 
-    if(obj.type == "circle"){
-        extra = "cx=\"" + obj.x.toFixed(2) + 
-            "%\" cy=\""+obj.y.toFixed(2) + 
-            "%\" r=\""+obj.r.toFixed(2) +"\"";
-    }
-    if(obj.type == "rect"){
-        extra = "x=\"" + obj.x.toFixed(2) +
-            "%\" y=\"" + obj.y.toFixed(2) +
-            "%\" rx=\"" + obj.r.toFixed(2) +
-            "%\" ry=\"" + obj.r.toFixed(2) +
-            "%\" width=\""+obj.w.toFixed(2) +
-            "%\" height=\""+obj.h.toFixed(2) + "%\"";
-    }
-    if(obj.type == "ellipse"){
-        extra = "cx=\"" + obj.x.toFixed(2) + 
-            "%\" cy=\""+obj.y.toFixed(2) + 
-            "%\" rx=\""+obj.rx.toFixed(2) + 
-            "%\" ry=\""+obj.ry.toFixed(2)+"%\"";
-    }
+
     if(obj.type == "line"){
-        extra = "x1=\"" + obj.sx.toFixed(2) + 
-            "%\" y1=\""+obj.sy.toFixed(2) + 
-            "%\" x2=\""+obj.ex.toFixed(2) + 
-            "%\" y2=\""+obj.ey.toFixed(2) +"%\"";
-    }
+        extra = "x1=\"" + obj.sx + 
+            "%\" y1=\""+obj.sy + 
+            "%\" x2=\""+obj.ex + 
+            "%\" y2=\""+obj.ey +"%\"";
+    }else 
+    if(obj.type == "rect"){
+        extra = "x=\"" + obj.x +
+            "%\" y=\"" + obj.y +
+            "%\" rx=\"" + obj.r +
+            "%\" ry=\"" + obj.r +
+            "%\" width=\""+obj.w +
+            "%\" height=\""+obj.h + "%\"";
+    }else 
+    if(obj.type == "circle"){
+        extra = "cx=\"" + obj.x + 
+            "%\" cy=\""+obj.y + 
+            "%\" r=\""+obj.r +"\"";
+    }else 
+    if(obj.type == "ellipse"){
+        extra = "cx=\"" + obj.x + 
+            "%\" cy=\""+obj.y + 
+            "%\" rx=\""+obj.rx + 
+            "%\" ry=\""+obj.ry+"%\"";
+    }else 
     if(obj.type == "text"){
-        extra = "x=\"" + obj.x.toFixed(2) +
-            "%\" y=\"" + obj.y.toFixed(2) +
+        extra = "x=\"" + obj.x +
+            "%\" y=\"" + obj.y +
             "%\"font-size=\""+obj.font_size+"\""; 
         internal = obj.txt;
     }
-    var stroke_s = getRGBstr(obj.stroke);
-    var fill_s = getRGBstr(obj.fill);
-    var retstr = "<" + obj.type + " " + extra;
-    if(obj.stroke_size !== 0){
+
+    retstr = "<" + obj.type + " class=\"svg-thing\" " + extra;
+    if(obj.stroke_w !== 0){
         retstr += " stroke=rgb(" + stroke_s + ")";
         retstr += " stroke-width=\"" + obj.stroke_w + "\"";
     }
     retstr += " fill=rgb(" + fill_s + ")";
+    retstr += " opacity=\""+obj.alpha+"\""
     retstr += ">"+internal+"</"+obj.type+">\n";
     return retstr;
 };
@@ -176,6 +181,7 @@ function svg_canvas(id, qd){
     this.stroke_val = 0;
     this.stroke_size = 1;
     this.cur_color = 0;
+    this.col_alpha = 255;
     // Internal values for text stuff 
     this.font_size = 10; // Default ???
     // Size of canvas in scaler form
@@ -195,6 +201,7 @@ function svg_canvas(id, qd){
     this.FPS = 0;
     this.lastLoop = new Date();
     this.clipshapes = true; // Clips shapes off screen
+    this.lastFrameTime = 0;
 
 };
 
@@ -227,18 +234,32 @@ svg_canvas.prototype.clear = function(){
     this.lastLoop = thisLoop;
 };
 svg_canvas.prototype.render = function(){
-    var obj_str = "";
-    for(var i = 0; i < this.svg_objects.length; i++){
-        obj_str += makeSVG(this.svg_objects[i]);
+    var obj_arr = [];
+
+    var len = this.svg_objects.length;
+    var i =0;
+    var txt_e = document.getElementById('svg-things');
+    txt_e.innerHTML = "Total Objects: "+len; 
+
+    while (len--) {
+        obj_arr.push( makeSVG(this.svg_objects[i]));
+        i++;
     }
+    var obj_str = obj_arr.join("");
     if(this.svg_element !== null){
         this.svg_element.innerHTML = obj_str;
     }
     return obj_str;
 };
-svg_canvas.prototype.drawFPS = function(){;
-    txt_e = document.getElementById('svg-fps');
+svg_canvas.prototype.drawFPS = function(){
+    var txt_e = document.getElementById('svg-fps');
     txt_e.innerHTML = "FPS:"+Math.floor(this.FPS); 
+};
+
+svg_canvas.prototype.drawFTime = function(ftime){
+    this.lastFrameTime = ftime;
+    var txt_e = document.getElementById('svg-ftime');
+    txt_e.innerHTML = "Last Frame:"+Math.floor(this.lastFrameTime)+"ms"; 
 };
 
 svg_canvas.prototype.noclip = function(){
@@ -263,6 +284,9 @@ svg_canvas.prototype.noStroke = function(){
 };
 svg_canvas.prototype.strokeWeight = function(w){
     this.stroke_size = w;
+};
+svg_canvas.prototype.setAlpha = function(t){
+    this.col_alpha = t/255;
 };
 svg_canvas.prototype.fill = function(a,b,c){
     var col;
@@ -293,14 +317,16 @@ svg_canvas.prototype.rect = function(rx,ry,w,h,r){
     }
     this.svg_objects.push({
         type:"rect",
-        x:(rx*100),
-        y:(ry*100),
-        w:w,
-        h:h,
+        x:(rx*100).toFixed(2),
+        y:(ry*100).toFixed(2),
+        w:w.toFixed(2),
+        h:h.toFixed(2),
         r:r,
         stroke: this.stroke_val,
         stroke_w: this.stroke_size,
-        fill: this.cur_color});
+        fill: this.cur_color,
+        alpha: this.col_alpha
+    });
 };
 svg_canvas.prototype.ellipse = function(cx,cy,w,h){
     if(this.clipshapes){
@@ -311,13 +337,15 @@ svg_canvas.prototype.ellipse = function(cx,cy,w,h){
     }
     this.svg_objects.push({
         type:"ellipse",
-        x:(cx*100),
-        y:(cy*100),
-        rx:w,
-        ry:h,
+        x:(cx*100).toFixed(2),
+        y:(cy*100).toFixed(2),
+        rx:w.toFixed(2),
+        ry:h.toFixed(2),
         stroke: this.stroke_val,
         stroke_w: this.stroke_size,
-        fill: this.cur_color});
+        fill: this.cur_color,
+        alpha: this.col_alpha
+    });
 };
 svg_canvas.prototype.circle = function(cx,cy,r){
     if(this.clipshapes){
@@ -328,12 +356,14 @@ svg_canvas.prototype.circle = function(cx,cy,r){
     }
     this.svg_objects.push({
         type:"circle",
-        x:(cx*100),
-        y:(cy*100),
+        x:(cx*100).toFixed(2),
+        y:(cy*100).toFixed(2),
         r:r,
         stroke: this.stroke_val,
         stroke_w: this.stroke_size,
-        fill: this.cur_color});
+        fill: this.cur_color,
+        alpha: this.col_alpha
+    });
 };
 svg_canvas.prototype.line = function(x1,y1,x2,y2){
     if(this.clipshapes){
@@ -350,15 +380,18 @@ svg_canvas.prototype.line = function(x1,y1,x2,y2){
         if(Sy2 <= Sy1 && Sy1 < -this.stroke_size) return; // Not visible
         if(Sy2 <= Sy1 && Sy2 > this.p_height+this.stroke_size) return; // Not visible
     }
+
     this.svg_objects.push({
         type:"line",
-        sx:(x1*100),
-        sy:(y1*100),
-        ex:(x2*100),
-        ey:(y2*100),
+        sx:(x1*100).toFixed(2),
+        sy:(y1*100).toFixed(2),
+        ex:(x2*100).toFixed(2),
+        ey:(y2*100).toFixed(2),
         stroke: this.stroke_val,
         stroke_w: this.stroke_size,
-        fill: this.cur_color});
+        fill: this.cur_color,
+        alpha: this.col_alpha
+    });
 };
 svg_canvas.prototype.text = function(t,x,y){
     if(this.clipshapes){
@@ -366,13 +399,15 @@ svg_canvas.prototype.text = function(t,x,y){
     }
     this.svg_objects.push({
         type:"text",
-        x:(cx*100),
-        y:(cy*100),
+        x:(x*100).toFixed(2),
+        y:(y*100).toFixed(2),
         txt:t,
         font_size:this.font_size,
         stroke: this.stroke_val,
         stroke_w: this.stroke_size,
-        fill: this.cur_color});
+        fill: this.cur_color,
+        alpha: this.col_alpha
+    });
 };
 svg_canvas.prototype.textSize = function(s){
     this.font_size = s;
@@ -392,11 +427,13 @@ svg_canvas.prototype.point = function(cx,cy){
 
     this.svg_objects.push({
         type:"circle",
-        x:(cx*100),
-        y:(cy*100),
+        x:(cx*100).toFixed(2),
+        y:(cy*100).toFixed(2),
         r:this.stroke_size,
         stroke: 0,
         stroke_w: 0,
-        fill: this.stroke_val});
+        fill: this.cur_color,
+        alpha: this.col_alpha
+    });
 };
 
