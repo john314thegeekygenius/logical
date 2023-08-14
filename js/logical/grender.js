@@ -73,8 +73,8 @@ var DrawSVG = function(catagory,tag){
             maxx = Math.max(maxx, px+pw);
             maxy = Math.max(maxy, py+ph);
 
-            minx = Math.min(minx, px+pw);
-            miny = Math.min(miny, py+ph);
+            minx = Math.min(minx, px);
+            miny = Math.min(miny, py);
         }
         if(p[0] === "fcircle" || p[0] === "circle"){
             var px = p[1];

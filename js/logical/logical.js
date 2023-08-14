@@ -47,6 +47,7 @@ function Logical() {
     }; // An empty circuit 
 
     this.select = null;
+    this.selected = [];
 };
 
 Logical.prototype.scrollCamera = function(x,y){
@@ -101,7 +102,6 @@ Logical.prototype.handleInput = function(){
             g_mouse.button = -1;
         }else if(g_mouse.clicked){
             var svgsize = this.holding[2];
-            var gs = 800*this.camera.zoom;
             var mx = g_mouse.x - (svgsize.x + (svgsize.w/2))*25*this.camera.zoom;
             var my = g_mouse.y - (svgsize.y + (svgsize.h/2))*25*this.camera.zoom;
             var mx = Math.floor(mx/gs);
@@ -110,13 +110,13 @@ Logical.prototype.handleInput = function(){
             var gy =  (my*gs)-this.camera.y+(this.camera.y%gs);
             gx /= gs;
             gy /= gs;
-
-            console.log(gx+" "+gy);
             this.circuit.gates[this.circuit.gates.length] = {
                 x: gx,
                 y: gy,
                 cat:this.holding[0],
-                key:this.holding[1]
+                key:this.holding[1],
+                box:svgsize,
+                selected:false
             };
             g_mouse.clicked = false;
         }
@@ -126,6 +126,16 @@ Logical.prototype.handleInput = function(){
             g_keys[27].released = false;
         }
         return;
+    }
+    if(g_keys[27].released){
+        // Remove all selected elements 
+        for(var i = 0; i < this.circuit.gates.length; i++){
+            var g = this.circuit.gates[i];
+            g.selected = false;
+        }
+
+        this.scene_changed = true;
+        g_keys[27].released = false;
     }
     if(g_mouse.clicked || !g_mouse.pressed){
         this.camera.cx = this.camera.x;
@@ -148,6 +158,42 @@ Logical.prototype.handleInput = function(){
     }else{
         // Select any objects 
         if(this.select !== null){
+            // Get the area 
+            var sx = this.select.sx;
+            var sy = this.select.sy;
+            var sw = this.select.sw;
+            var sh = this.select.sh;
+            // Keep the values absolute
+            if(sw < 0){
+                sx += sw;
+                sw = -sw;
+            }
+            if(sh < 0){
+                sy += sh;
+                sh = -sh;
+            }
+            var wx = ((sx - this.camera.x));
+            var wy = ((sy - this.camera.y));
+            var ww = (sw);
+            var wh = (sh);
+            // Find the objects in selected area 
+            for(var i = 0; i < this.circuit.gates.length; i++){
+                var g = this.circuit.gates[i];
+                var hx = g.x*gs;
+                var hy = g.y*gs;
+                var hw = g.box.w;
+                var hh = g.box.h;
+                // Reset the gate (we don't want to accumulate unless ctrl is pressed too?)
+                if(g_keys[17].pressed===false){
+                    g.selected = false;
+                }
+                if(hx+gs >= wx && hy+gs >= wy){
+                    if(wx+ww >= hx+hw-gs && wy+wh >= hy+hh-gs){
+                        g.selected = true;
+                    }
+                }
+            }
+
             this.select = null;
         }
     }
@@ -268,6 +314,17 @@ Logical.prototype.draw = function(){
     for(var i = 0; i < this.circuit.gates.length; i++){
         var g = this.circuit.gates[i];
         this.drawSVG(g.cat,g.key,g.x*gs,g.y*gs);
+        if(g.selected === true){
+            var px = g.x*gs + this.camera.x;
+            var py = g.y*gs + this.camera.y;
+            var pw = g.box.w*5/gw;
+            var ph = g.box.h*5/gh;
+            this.svg.noStroke();
+            this.svg.setAlpha(128);
+            this.svg.fill(g_col_4);
+            this.svg.rect(px/this.svg.p_width,py/this.svg.p_height,pw,ph);
+            this.svg.setAlpha(255);
+        }
     }
 
     // Draw a select box if needed 
@@ -276,7 +333,23 @@ Logical.prototype.draw = function(){
         var sy = this.select.sy;
         var sw = this.select.sw;
         var sh = this.select.sh;
-        sx = sy = 0;
+        // Keep the values absolute
+        if(sw < 0){
+            sx += sw;
+            sw = -sw;
+        }
+        if(sh < 0){
+            sy += sh;
+            sh = -sh;
+        }
+
+        // Scale into window view
+        sx /= this.svg.p_width;
+        sy /= this.svg.p_height;
+        sw /= this.svg.p_width/100;
+        sh /= this.svg.p_height/100;
+
+        // Draw the selection box
         this.svg.setAlpha(64);
         this.svg.fill(g_col_6);
         this.svg.rect(sx,sy,sw,sh);
