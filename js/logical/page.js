@@ -3,7 +3,7 @@
     *
     * Written by: The Wizard
     *
-    * Aug. 4, 2023
+    * Aug. 14, 2023
     *
     * This project is under the GPT-3 license which states:
     *
@@ -44,6 +44,25 @@ Page.prototype.scrollCamera = function(x,y){
     this.camera.sy = y-this.camera.y;
 };
 
+Page.prototype.updateCamera = function(){
+    // Make the camera move
+    if(Math.abs(this.camera.sx) < 0.1){
+        this.camera.sx = 0;
+    }
+    if(Math.abs(this.camera.sy) < 0.1){
+        this.camera.sy = 0;
+    }
+    if(this.camera.sx){
+        this.camera.sx /= 2;
+        this.camera.x += this.camera.sx;
+        this.scene_changed = true;
+    }
+    if(this.camera.sy){
+        this.camera.sy /= 2;
+        this.camera.y += this.camera.sy;
+        this.scene_changed = true;
+    }
+};
 
 
 

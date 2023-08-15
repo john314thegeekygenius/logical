@@ -39,7 +39,6 @@ function Logical() {
 
     this.camera = {};
     this.selected = [];
-    this.grabbed = [];
 };
 
 Logical.prototype.handlePage = function(){
@@ -63,6 +62,7 @@ Logical.prototype.holdItem = function(key1, key2){
 Logical.prototype.MouseOver = function(x,y,w,h){
     var mx = g_mouse.x;
     var my = g_mouse.y;
+    console.log(mx+","+my+" -- "+x+","+y+","+w+","+h);
     if(mx >= x && my >= y && mx < x+w && my < y+h){
         return true;
     }
@@ -71,7 +71,6 @@ Logical.prototype.MouseOver = function(x,y,w,h){
 
 Logical.prototype.handleInput = function(){
     var gs = 400*this.camera.zoom;
-    var page = this.pages[this.cur_page];
 
     // Zoom in 
     if(g_mouse.wheel < 0){
@@ -112,13 +111,12 @@ Logical.prototype.handleInput = function(){
             gx /= gs;
             gy /= gs;
             this.pages[this.cur_page].circuit.addGate({
-                x: Math.floor(gx),
-                y: Math.floor(gy),
+                x: gx,
+                y: gy,
                 cat:this.holding[0],
                 key:this.holding[1],
                 box:svgsize,
-                selected:false,
-                hover:false
+                selected:false
             });
             g_mouse.clicked = false;
         }
@@ -132,7 +130,7 @@ Logical.prototype.handleInput = function(){
     if(g_keys[27].released){
         // Remove all selected elements 
         this.pages[this.cur_page].circuit.clearSelections();
-        this.grabbed = [];
+
         this.scene_changed = true;
         g_keys[27].released = false;
     }
@@ -140,62 +138,21 @@ Logical.prototype.handleInput = function(){
         this.camera.cx = this.camera.x;
         this.camera.cy = this.camera.y;
     }
-
-    // Select objects 
-    for(var i = page.circuit.gates.length-1; i >=0 ; i--){
-        var g = page.circuit.gates[i];
-        var px = g.x*gs + this.camera.x;
-        var py = g.y*gs + this.camera.y;
-        var pw = (g.box.w)*this.camera.zoom*40;
-        var ph = (g.box.h)*this.camera.zoom*40;
-        g.hover = false;
-        if(this.MouseOver(px,py,pw,ph)){
-            g.hover = true;
-        }
-    }
     if(g_mouse.pressed){
-        var skipdrag = false;
-        if(this.grabbed.length===0 && this.select === null){
-            // Move Objects 
-            for(var i = 0; i < page.circuit.gates.length; i++){
-                var g = page.circuit.gates[i];
-                var gx = (g_mouse.x)-this.camera.x;
-                var gy =  (g_mouse.y)-this.camera.y;
-                if(g.hover){
-                    this.grabbed = [(gx), (gy)]
-                    if(g_keys[17].pressed === false && g.selected == false){
-                        this.pages[this.cur_page].circuit.clearSelections();
-                    }
-                    // Select that one item 
-                    g.selected = true;
-                    skipdrag = true;
-                    break;
-                }
-            }
+        if(g_keys[16].pressed === true){
+            // Select tool 
+            this.select = {
+                sx: g_mouse.cx,
+                sy: g_mouse.cy,
+                sw: g_mouse.x-g_mouse.cx,
+                sh: g_mouse.y-g_mouse.cy };
         }else{
-            skipdrag = true;
-        }
-        if(this.grabbed.length===0){
-            if(g_keys[16].pressed === true){
-                // Select tool 
-                this.select = {
-                    sx: g_mouse.cx,
-                    sy: g_mouse.cy,
-                    sw: g_mouse.x-g_mouse.cx,
-                    sh: g_mouse.y-g_mouse.cy };
-                skipdrag = true;
-            }
-
-        }
-        if(skipdrag===false){
-            this.pages[this.cur_page].circuit.clearSelections();
             // Drag controls
             this.camera.x = (g_mouse.x - g_mouse.cx) + this.camera.cx;
             this.camera.y = (g_mouse.y - g_mouse.cy) + this.camera.cy;
+            this.scene_changed = true;
         }
-        this.scene_changed = true; // Useless?
     }else{
-        this.grabbed = [];
         // Select any objects 
         if(this.select !== null){
             // Get the area 
@@ -217,6 +174,7 @@ Logical.prototype.handleInput = function(){
             var ww = (sw);
             var wh = (sh);
             // Find the objects in selected area 
+            var page = this.pages[this.cur_page];
             for(var i = 0; i < page.circuit.gates.length; i++){
                 var g = page.circuit.gates[i];
                 var hx = g.x*gs;
@@ -238,33 +196,16 @@ Logical.prototype.handleInput = function(){
         }
     }
 
-    if(this.grabbed.length){
-        var px = (this.grabbed[0]) + (this.camera.x);
-        var py = (this.grabbed[1]) + (this.camera.y);
-        var mx = g_mouse.x;
-        var my = g_mouse.y;
-        var gx = Math.floor((px-mx)/gs);
-        var gy = Math.floor((py-my)/gs);
-        for(var i = 0; i < page.circuit.gates.length; i++){
-            var g = page.circuit.gates[i];
-            if(g.selected){
-                g.x -= gx;
-                g.y -= gy;
-            }
-        }
-        this.grabbed[0] -= gx*gs;
-        this.grabbed[1] -= gy*gs;
-    }
-
     if(g_keys[32].released === true){
         // Go back to the center
-        page.scrollCamera(0,0);
+        this.scrollCamera(0,0);
         g_keys[32].released = false;
     }
     // Delete gates 
     if(g_keys[46].released === true){
         var rmi = [];
         // Find the objects in selected area 
+        var page = this.pages[this.cur_page];
         for(var i = 0; i < page.circuit.gates.length; i++){
             var g = page.circuit.gates[i];
             if(g.selected === true){
@@ -278,11 +219,37 @@ Logical.prototype.handleInput = function(){
         g_keys[46].released = false;
     }
 
-    page.updateCamera();
+    var page = this.pages[this.cur_page];
+    for(var i = 0; i < page.circuit.gates.length; i++){
+        var g = page.circuit.gates[i];
+        if(this.MouseOver(px,py,g.box.w,g.box.h*1.2)){
+            if(g_mouse.released){
+                if(g_keys[17] === false){
+                    page.circuit.clearSelections();
+                }
+                g.selected = true;
+            }
+        }
+    }
 
-    g_mouse.released = false;
-    g_mouse.clicked = false;
-}
+    // Make the camera move
+    if(Math.abs(this.camera.sx) < 0.1){
+        this.camera.sx = 0;
+    }
+    if(Math.abs(this.camera.sy) < 0.1){
+        this.camera.sy = 0;
+    }
+    if(this.camera.sx){
+        this.camera.sx /= 2;
+        this.camera.x += this.camera.sx;
+        this.scene_changed = true;
+    }
+    if(this.camera.sy){
+        this.camera.sy /= 2;
+        this.camera.y += this.camera.sy;
+        this.scene_changed = true;
+    }
+};
 
 Logical.prototype.getItem = function(catagory, tag){
     var item = gate_json_list[catagory];
@@ -384,9 +351,9 @@ Logical.prototype.draw = function(){
         var ph = g.box.h*5/gh;
 
         this.drawSVG(g.cat,g.key,g.x*gs,g.y*gs);
-        if(g.selected === true || g.hover){
+        if(g.selected === true || this.MouseOver(px,py,g.box.w,g.box.h*1.2)){
             this.svg.noStroke();
-            if(g.hover){
+            if(this.MouseOver(px,py,pw,ph)){
                 this.svg.setAlpha(200);
             }else{
                 this.svg.setAlpha(128);
