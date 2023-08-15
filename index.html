@@ -26,6 +26,7 @@
 <html lang="en" height="100%" width="100%">
     <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Logical</title>
         <link rel="stylesheet" href="css/style-dark.css"></link>
         <script src="js/jquery-3.7.0.js"></script>
@@ -37,6 +38,9 @@
             <button id="newfile" class="menu-item" onclick="NewCircuit()">New</button>
             <button id="openfile" class="menu-item" onclick="LoadCircuit()">Load</button>
             <button id="savefile" class="menu-item" onclick="SaveCircuit()">Save</button>
+        </div>
+        <!-- Create a tab bar at the top -->
+        <div class="tab-bar" id="tabs-list">
         </div>
         <!-- Create an area for the canvas -->
         <div class="user-area">
@@ -66,6 +70,8 @@
         </div>
         <!-- Run the scripts -->
         <script type="text/javascript" src="js/gfxapi.js"></script>
+        <script type="text/javascript" src="js/logical/circuit.js"></script>
+        <script type="text/javascript" src="js/logical/page.js"></script>
         <script type="text/javascript" src="js/logical/logical.js"></script>
         <script type="text/javascript" src="js/logical/grender.js"></script>
         <script type="text/javascript" src="js/runtime.js"></script>

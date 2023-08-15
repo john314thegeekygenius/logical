@@ -27,34 +27,24 @@
 function Logical() {
     this.svg = new svg_canvas('svg-ctx');
 
-    this.camera = {
-        x:80,
-        y:80,
-        cx:0,
-        cy:0,
-        sx:0,
-        sy:0,
-        zoom:1/32,
-    };
-
     this.holding = [];
 
     this.scene_changed = true; // We want to update ONCE 
 
-    this.circuit = {
-        gates:[],
-        wires:[],
-    }; // An empty circuit 
-
+    this.pages = [];
+    this.cur_page = 0;
     this.select = null;
+
+    // Page copies 
+
+    this.camera = {};
     this.selected = [];
 };
 
-Logical.prototype.scrollCamera = function(x,y){
-    this.camera.sx = x-this.camera.x;
-    this.camera.sy = y-this.camera.y;
+Logical.prototype.handlePage = function(){
+    this.camera = this.pages[this.cur_page].camera;
+    this.selected = this.pages[this.cur_page].selected;
 };
-
 
 Logical.prototype.holdItem = function(key1, key2){
     var item = this.getItem(key1, key2 );
@@ -110,14 +100,14 @@ Logical.prototype.handleInput = function(){
             var gy =  (my*gs)-this.camera.y+(this.camera.y%gs);
             gx /= gs;
             gy /= gs;
-            this.circuit.gates[this.circuit.gates.length] = {
+            this.pages[this.cur_page].circuit.addGate({
                 x: gx,
                 y: gy,
                 cat:this.holding[0],
                 key:this.holding[1],
                 box:svgsize,
                 selected:false
-            };
+            });
             g_mouse.clicked = false;
         }
         if(g_keys[27].released){
@@ -129,10 +119,7 @@ Logical.prototype.handleInput = function(){
     }
     if(g_keys[27].released){
         // Remove all selected elements 
-        for(var i = 0; i < this.circuit.gates.length; i++){
-            var g = this.circuit.gates[i];
-            g.selected = false;
-        }
+        this.pages[this.cur_page].circuit.clearSelections();
 
         this.scene_changed = true;
         g_keys[27].released = false;
@@ -177,8 +164,9 @@ Logical.prototype.handleInput = function(){
             var ww = (sw);
             var wh = (sh);
             // Find the objects in selected area 
-            for(var i = 0; i < this.circuit.gates.length; i++){
-                var g = this.circuit.gates[i];
+            var page = this.pages[this.cur_page];
+            for(var i = 0; i < page.circuit.gates.length; i++){
+                var g = page.circuit.gates[i];
                 var hx = g.x*gs;
                 var hy = g.y*gs;
                 var hw = g.box.w;
@@ -203,18 +191,20 @@ Logical.prototype.handleInput = function(){
         this.scrollCamera(0,0);
         g_keys[32].released = false;
     }
+    // Delete gates 
     if(g_keys[46].released === true){
         var rmi = [];
         // Find the objects in selected area 
-        for(var i = 0; i < this.circuit.gates.length; i++){
-            var g = this.circuit.gates[i];
+        var page = this.pages[this.cur_page];
+        for(var i = 0; i < page.circuit.gates.length; i++){
+            var g = page.circuit.gates[i];
             if(g.selected === true){
                 // Delete that gate 
                 rmi.push(i-rmi.length);
             }
         }
         for(var i = 0; i < rmi.length; i++){
-            this.circuit.gates.splice(rmi[i],1);
+            this.pages[this.cur_page].circuit.deleteGate(rmi[i]);
         }
         g_keys[46].released = false;
     }
@@ -327,10 +317,11 @@ Logical.prototype.draw = function(){
     }
     // Rescale into the correct cooords 
     var gs = 400*this.camera.zoom;
-    // Draw any gates
     
-    for(var i = 0; i < this.circuit.gates.length; i++){
-        var g = this.circuit.gates[i];
+    // Draw any gates
+    var page = this.pages[this.cur_page];
+    for(var i = 0; i < page.circuit.gates.length; i++){
+        var g = page.circuit.gates[i];
         this.drawSVG(g.cat,g.key,g.x*gs,g.y*gs);
         if(g.selected === true){
             var px = g.x*gs + this.camera.x;
@@ -390,6 +381,8 @@ Logical.prototype.draw = function(){
 };
 
 Logical.prototype.run = function() {
+    this.handlePage();
+
     this.handleInput();
 
     this.draw();
