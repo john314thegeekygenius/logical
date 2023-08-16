@@ -26,8 +26,8 @@ body {
 .user-area {
     position: absolute;
     top: 42px;
-    left: 300px;
-    width: 100%;
+    left: 310px;
+    width: calc(100% - 310px);
     height: 100vh;
     overflow:hidden;
 }

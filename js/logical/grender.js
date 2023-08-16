@@ -57,11 +57,11 @@ var DrawSVG = function(catagory,tag){
         return;
     }
 
-
-    var minx = 10000;
-    var miny = 10000;
-    var maxx = 0;
-    var maxy = 0;
+    var infiniy = Math.pow(1000,100);
+    var minx = infiniy;
+    var miny = infiniy;
+    var maxx = -infiniy;
+    var maxy = -infiniy;
 
     for(var i = 0; i < svgthing.length; i++){
         var p = svgthing[i];

@@ -30,6 +30,13 @@ function onKeyReleased(e){
     g_keys[e.keyCode].released = true;
 };
 
+function clearKeys(){
+    for(var i = 0; i < g_keys.length; i++){
+        //g_keys[i].pressed = false;
+        g_keys[i].released = false;
+    }
+};
+
 // Mouse stuff 
 //
 var g_mouse = {
@@ -52,6 +59,11 @@ svgc_element.addEventListener('mousedown', onMouseDown, false);
 svgc_element.addEventListener('mouseup', onMouseUp, false);
 svgc_element.addEventListener('wheel', onMouseWheel, false);
 svgc_element.addEventListener('click', onMouseClicked, false);
+svgc_element.addEventListener('contextmenu', onMouseClicked, false);
+
+const MB_LEFT = 1;
+const MB_MID = 2;
+const MB_RIGHT = 3;
 
 function onMouseUpdate(e) {
     g_mouse.px = g_mouse.x;
@@ -59,14 +71,14 @@ function onMouseUpdate(e) {
     g_mouse.py = g_mouse.y;
     g_mouse.y = e.offsetY;
     g_mouse.moved = true;
-    g_mouse.button = e.button;
+    g_mouse.button = e.which;
 };
 
 function onMouseDown(e){
     if(g_mouse.pressed === false){
         g_mouse.cx = g_mouse.x;
         g_mouse.cy = g_mouse.y;
-        g_mouse.button = e.button;
+        g_mouse.button = e.which;
     }
     g_mouse.pressed = true;
 };
@@ -88,7 +100,8 @@ function onMouseUp(e){
 
 function onMouseClicked(e){
     g_mouse.clicked = true;
-    g_mouse.button = e.button;
+    g_mouse.button = e.which;
+    e.preventDefault();
 };
 
 // Get the attributes from the CSS file 

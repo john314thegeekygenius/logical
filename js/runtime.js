@@ -87,8 +87,6 @@ function AddTab(){
     buttonstr +="<button id=\"new-tab\" class=\"tab-button\" onclick=\"AddTab()\">+</button>\n";
     element.innerHTML = buttonstr;
     SetTab(logical.pages.length);
-   // 
-//   
 };
 
 function CatChange(e){

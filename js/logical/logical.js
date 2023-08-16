@@ -57,7 +57,7 @@ Logical.prototype.holdItem = function(key1, key2){
         console.error("bad box info for "+key1+":"+key2);
         svgsize = {x:0,y:0,w:0,h:0};
     }
-    this.holding = [key1, key2, svgsize];
+    this.holding = [key1, key2, svgsize, 0];
 };
 
 Logical.prototype.MouseOver = function(x,y,w,h){
@@ -69,77 +69,52 @@ Logical.prototype.MouseOver = function(x,y,w,h){
     return false;
 };
 
-Logical.prototype.handleInput = function(){
+Logical.prototype.placerHandler = function(){
     var gs = 400*this.camera.zoom;
-    var page = this.pages[this.cur_page];
-
-    // Zoom in 
-    if(g_mouse.wheel < 0){
-        // Zoom in at the mouse (centered)
-        var gx = (g_mouse.x/gs);
-        var gy = (g_mouse.y/gs);
-        this.camera.x -= gx;
-        console.log(gx);
-
-        this.camera.zoom *= 2;
-        this.scene_changed = true;
-    }
-    // Zoom out 
-    if(g_mouse.wheel > 0){
-        this.camera.zoom /= 2;
-        this.scene_changed = true;
-    }
-    if(this.camera.zoom < 1/128){
-        this.camera.zoom = 1/128;
-    }
-    if(this.camera.zoom > 100){
-        this.camera.zoom = 100;
-    }
 
     if(this.holding.length){
         // We need to place a gate down maybe 
-        if(g_mouse.button == 2){
-            this.holding = [];
-            g_mouse.button = -1;
-        }else if(g_mouse.clicked){
-            var svgsize = this.holding[2];
-            var mx = g_mouse.x - (svgsize.x + (svgsize.w/2))*25*this.camera.zoom;
-            var my = g_mouse.y - (svgsize.y + (svgsize.h/2))*25*this.camera.zoom;
-            var mx = Math.floor(mx/gs);
-            var my = Math.floor(my/gs);
-            var gx = (mx*gs)-this.camera.x+(this.camera.x%gs);
-            var gy =  (my*gs)-this.camera.y+(this.camera.y%gs);
-            gx /= gs;
-            gy /= gs;
-            this.pages[this.cur_page].circuit.addGate({
-                x: Math.floor(gx),
-                y: Math.floor(gy),
-                cat:this.holding[0],
-                key:this.holding[1],
-                box:svgsize,
-                selected:false,
-                hover:false
-            });
+        if(g_mouse.clicked){
+            if(g_mouse.button === MB_RIGHT ){
+                // Rotate the hovered item 
+                this.holding[3] = (this.holding[3]+1)%4;
+                //this.holding = [];
+                //g_mouse.button = -1;
+            }else if(g_mouse.button === MB_LEFT){
+                var svgsize = this.holding[2];
+                var mx = g_mouse.x - (svgsize.x + (svgsize.w/2))*25*this.camera.zoom;
+                var my = g_mouse.y - (svgsize.y + (svgsize.h/2))*25*this.camera.zoom;
+                var mx = Math.floor(mx/gs);
+                var my = Math.floor(my/gs);
+                var gx = (mx*gs)-this.camera.x+(this.camera.x%gs);
+                var gy =  (my*gs)-this.camera.y+(this.camera.y%gs);
+                gx /= gs;
+                gy /= gs;
+                this.pages[this.cur_page].circuit.addGate({
+                    x: Math.floor(gx),
+                    y: Math.floor(gy),
+                    cat:this.holding[0],
+                    key:this.holding[1],
+                    box:this.holding[2],
+                    rot:this.holding[3],
+                    selected:false,
+                    hover:false
+                });
+            }
             g_mouse.clicked = false;
         }
         if(g_keys[27].released){
             this.holding = [];
             this.scene_changed = true;
-            g_keys[27].released = false;
         }
-        return;
+        return true;
     }
-    if(g_keys[27].released){
-        // Remove all selected elements 
-        this.pages[this.cur_page].circuit.clearSelections();
-        this.grabbed = [];
-        this.scene_changed = true;
-        g_keys[27].released = false;
-    }
-    if(g_mouse.clicked || !g_mouse.pressed){
-        this.camera.cx = this.camera.x;
-        this.camera.cy = this.camera.y;
-    }
+    return false;
+};
+
+Logical.prototype.mouseGateInteract= function(){
+    var gs = 400*this.camera.zoom;
+    var page = this.pages[this.cur_page];
 
     // Select objects 
     for(var i = page.circuit.gates.length-1; i >=0 ; i--){
@@ -148,8 +123,10 @@ Logical.prototype.handleInput = function(){
         var py = g.y*gs + this.camera.y;
         var pw = (g.box.w)*this.camera.zoom*40;
         var ph = (g.box.h)*this.camera.zoom*40;
+        var pa = (g.box.x)*this.camera.zoom*40;
+        var pb = (g.box.y)*this.camera.zoom*40;
         g.hover = false;
-        if(this.MouseOver(px,py,pw,ph)){
+        if(this.MouseOver(px+pa,py+pb,pw,ph)){
             g.hover = true;
         }
     }
@@ -160,7 +137,7 @@ Logical.prototype.handleInput = function(){
             for(var i = 0; i < page.circuit.gates.length; i++){
                 var g = page.circuit.gates[i];
                 var gx = (g_mouse.x)-this.camera.x;
-                var gy =  (g_mouse.y)-this.camera.y;
+                var gy = (g_mouse.y)-this.camera.y;
                 if(g.hover){
                     this.grabbed = [(gx), (gy)]
                     if(g_keys[17].pressed === false && g.selected == false){
@@ -175,24 +152,30 @@ Logical.prototype.handleInput = function(){
         }else{
             skipdrag = true;
         }
-        if(this.grabbed.length===0){
-            if(g_keys[16].pressed === true){
-                // Select tool 
-                this.select = {
-                    sx: g_mouse.cx,
-                    sy: g_mouse.cy,
-                    sw: g_mouse.x-g_mouse.cx,
-                    sh: g_mouse.y-g_mouse.cy };
-                skipdrag = true;
-            }
+        if(g_mouse.button === MB_LEFT){
+            if(this.grabbed.length===0){
+                if(g_keys[16].pressed === true){
+                    // Select tool 
+                    this.select = {
+                        sx: g_mouse.cx,
+                        sy: g_mouse.cy,
+                        sw: g_mouse.x-g_mouse.cx,
+                        sh: g_mouse.y-g_mouse.cy };
+                    skipdrag = true;
+                }
 
+            }
+            if(skipdrag===false){
+                this.pages[this.cur_page].circuit.clearSelections();
+                // Drag controls
+                this.camera.x = (g_mouse.x - g_mouse.cx) + this.camera.cx;
+                this.camera.y = (g_mouse.y - g_mouse.cy) + this.camera.cy;
+            }
         }
-        if(skipdrag===false){
-            this.pages[this.cur_page].circuit.clearSelections();
-            // Drag controls
-            this.camera.x = (g_mouse.x - g_mouse.cx) + this.camera.cx;
-            this.camera.y = (g_mouse.y - g_mouse.cy) + this.camera.cy;
+        if(g_mouse.button === MB_RIGHT){
+            // Rotate the hovered item 
         }
+
         this.scene_changed = true; // Useless?
     }else{
         this.grabbed = [];
@@ -255,33 +238,97 @@ Logical.prototype.handleInput = function(){
         this.grabbed[0] -= gx*gs;
         this.grabbed[1] -= gy*gs;
     }
+};
 
-    if(g_keys[32].released === true){
-        // Go back to the center
-        page.scrollCamera(0,0);
-        g_keys[32].released = false;
+Logical.prototype.handleInput = function(){
+    var gs = 400*this.camera.zoom;
+    var page = this.pages[this.cur_page];
+
+    // Zoom in 
+    if(g_mouse.wheel < 0){
+        // Zoom in at the mouse (centered)
+        var gx = (g_mouse.x/gs);
+        var gy = (g_mouse.y/gs);
+        this.camera.x -= gx;
+        console.log(gx);
+
+        this.camera.zoom *= 2;
+        this.scene_changed = true;
     }
-    // Delete gates 
-    if(g_keys[46].released === true){
-        var rmi = [];
-        // Find the objects in selected area 
-        for(var i = 0; i < page.circuit.gates.length; i++){
-            var g = page.circuit.gates[i];
-            if(g.selected === true){
-                // Delete that gate 
-                rmi.push(i-rmi.length);
+    // Zoom out 
+    if(g_mouse.wheel > 0){
+        this.camera.zoom /= 2;
+        this.scene_changed = true;
+    }
+    if(this.camera.zoom < 1/128){
+        this.camera.zoom = 1/128;
+    }
+    if(this.camera.zoom > 100){
+        this.camera.zoom = 100;
+    }
+
+    if(this.placerHandler() === false){
+
+        if(g_keys[27].released){
+            // Remove all selected elements 
+            this.pages[this.cur_page].circuit.clearSelections();
+            this.grabbed = [];
+            this.scene_changed = true;
+        }
+        if(g_mouse.clicked || !g_mouse.pressed){
+            this.camera.cx = this.camera.x;
+            this.camera.cy = this.camera.y;
+        }
+
+        this.mouseGateInteract();
+
+        if(g_keys[32].released === true){
+            // Go to the center of circuit components 
+            // Find the objects locations 
+            var infiniy = Math.pow(1000,100);
+            var minx = infiniy, miny = infiniy;
+            var maxx = -infiniy, maxy = -infiniy;
+            for(var i = 0; i < page.circuit.gates.length; i++){
+                var g = page.circuit.gates[i];
+                var gx = g.x*gs;
+                var gy = g.y*gs;
+                minx = Math.min(minx, gx);
+                maxx = Math.max(maxx, gx+(g.box.w*100*this.camera.zoom));
+                miny = Math.min(miny, gy);
+                maxy = Math.max(maxy, gy+(g.box.h*100*this.camera.zoom));
+                console.log(g);
+            }
+            console.log("min:"+minx+","+miny);
+            console.log("max:"+maxx+","+maxy);
+            // Get the center 
+            var cx = (minx-maxx)/2;
+            var cy = (maxy-miny)/2;
+            var winx = this.svg.p_width/2;
+            var winy = this.svg.p_height/2;
+            page.scrollCamera(winx-cx,winy-cy);
+        }
+        // Delete gates 
+        if(g_keys[46].released === true){
+            var rmi = [];
+            // Find the objects in selected area 
+            for(var i = 0; i < page.circuit.gates.length; i++){
+                var g = page.circuit.gates[i];
+                if(g.selected === true){
+                    // Delete that gate 
+                    rmi.push(i-rmi.length);
+                }
+            }
+            for(var i = 0; i < rmi.length; i++){
+                this.pages[this.cur_page].circuit.deleteGate(rmi[i]);
             }
         }
-        for(var i = 0; i < rmi.length; i++){
-            this.pages[this.cur_page].circuit.deleteGate(rmi[i]);
-        }
-        g_keys[46].released = false;
     }
 
     page.updateCamera();
 
     g_mouse.released = false;
     g_mouse.clicked = false;
+    clearKeys();
 }
 
 Logical.prototype.getItem = function(catagory, tag){
@@ -298,7 +345,7 @@ Logical.prototype.getItem = function(catagory, tag){
     return item;
 };
 
-Logical.prototype.drawSVG = function(catagory,tag,x, y){
+Logical.prototype.drawSVG = function(catagory,tag,x, y, rot){
     if( gate_json_list === undefined){
         console.error("Gates not loaded?");
         return;
@@ -315,13 +362,27 @@ Logical.prototype.drawSVG = function(catagory,tag,x, y){
         var p = svgthing[i];
         var sw = 12*this.camera.zoom;
         if(sw < 1){ sw = 1; }
+        var ww = item.box.w*ts/2.5;
+        var wh = item.box.h*ts/2.5;
+        var px,py,pw,ph,t;
         this.svg.strokeWeight(sw);
         this.svg.stroke(g_col_5);
         if(p[0] === "frect" || p[0] === "rect"){
-            var px = (p[1]*ts/2.5)+tx;
-            var py = (p[2]*ts/2.5)+ty;
-            var pw = p[3]*ts*40;
-            var ph = p[4]*ts*40;
+            px = (p[1]*ts/2.5)+tx;
+            py = (p[2]*ts/2.5)+ty;
+            pw = p[3]*ts*40;
+            ph = p[4]*ts*40;
+            if(rot === 1){
+                t = pw; pw = ph; ph = t;
+                px -= pw;
+            }else if(rot === 2){
+                px = ww-px;
+                py = wh-py;
+            }else if(rot === 3){
+                t = py; py = px; px = t;
+                t = pw; pw = ph; ph = t;
+                py = py-ph;
+            }
             if(p[0]==="frect"){
                 this.svg.fill(g_col_3);
             }else{
@@ -341,10 +402,29 @@ Logical.prototype.drawSVG = function(catagory,tag,x, y){
             this.svg.circle(px/this.svg.p_width, py/this.svg.p_height, pr);
         }
         if(p[0] === "line" || p[0] === "wline"){
-            var px = (p[1]*ts/2.5)+tx;
-            var py = (p[2]*ts/2.5)+ty;
-            var pw = (p[3]*ts/2.5)+tx;
-            var ph = (p[4]*ts/2.5)+ty;
+            px = (p[1]*ts/2.5);
+            py = (p[2]*ts/2.5);
+            pw = (p[3]*ts/2.5);
+            ph = (p[4]*ts/2.5);
+            if(rot === 1){
+                t = py; py = px; px = t;
+                t = pw; pw = ph; ph = t;
+                px = ww-px;
+                pw = ww-pw;
+            }else if(rot === 2){
+                px = ww-px;
+                py = wh-py;
+                pw = ww-pw;
+                ph = wh-ph;
+            }else if(rot === 3){
+                t = py; py = px; px = t;
+                t = pw; pw = ph; ph = t;
+                py = wh-py;
+                ph = wh-ph;
+            }
+
+            px += tx; py += ty;
+            pw += tx; ph += ty;
             if(p[0] === "wline"){
                 this.svg.strokeWeight(sw*2);
             }
@@ -382,8 +462,12 @@ Logical.prototype.draw = function(){
         var py = g.y*gs + this.camera.y;
         var pw = g.box.w*5/gw;
         var ph = g.box.h*5/gh;
+        var pa = (g.box.x)*this.camera.zoom*40;
+        var pb = (g.box.y)*this.camera.zoom*40;
+        px += pa;
+        py += pb;
 
-        this.drawSVG(g.cat,g.key,g.x*gs,g.y*gs);
+        this.drawSVG(g.cat,g.key,g.x*gs,g.y*gs,g.rot);
         if(g.selected === true || g.hover){
             this.svg.noStroke();
             if(g.hover){
@@ -436,8 +520,9 @@ Logical.prototype.draw = function(){
         var gx = (mx*gs)-this.camera.x+(this.camera.x%gs);
         var gy =  (my*gs)-this.camera.y+(this.camera.y%gs);
         // Draw the held item 
-        this.drawSVG(this.holding[0], this.holding[1],gx,gy);
+        this.drawSVG(this.holding[0], this.holding[1],gx,gy,this.holding[3]);
     }
+
     this.scene_changed = true;
 };
 

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html> 
+  <head>
+    <title>Processing.JS inside Webpages: Template</title> 
+  </head>
+  <body style="background-color:#333;">
+	<!--This draws the canvas on the webpage -->
+    <canvas id="mycanvas"></canvas> 
+  </body>
+ 
+  <!-- Include the processing.js library -->
+  <!-- See https://khanacademy.zendesk.com/hc/en-us/articles/202260404-What-parts-of-ProcessingJS-does-Khan-Academy-support- for differences -->
+  <script src="js/processing.min.js"></script> 
+  <script src="js/svg_helper.js"></script> 
+  <script>
+      // Get the canvas that ProcessingJS will use
+      var canvas = document.getElementById("mycanvas"); 
+      // Pass the function to ProcessingJS constructor
+      var processingInstance = new Processing(canvas, programCode); 
+  </script>
+</html>
+
+
