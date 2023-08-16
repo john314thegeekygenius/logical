@@ -1,6 +1,6 @@
 var programCode = function(processingInstance) {
     with (processingInstance) {
-        size(2700, 1600); 
+        size(2700, 3400); 
         frameRate(30);
         var res = 40;
         var mThresh = 4; // Number of pixels next to a 
@@ -40,8 +40,8 @@ var programCode = function(processingInstance) {
 
         loadSVG();
 
-        var m_hoverx = 0;// Where is the mouse hovering?
-            var m_hovery = 0;
+        var m_hoverx = 0; // Where is the mouse hovering?
+        var m_hovery = 0;
         var m_hovrad = 0; // Radius from click point
         var m_on_obj = -1; // Is the mouse over an object
         var m_on_in = -1;
@@ -72,8 +72,8 @@ var programCode = function(processingInstance) {
 
         var genGrid = function(){
             var gfx = createGraphics(width,height);
-            for(var i = 0; i <= res*6; i++){
-                for(var e = 0; e <= res*7; e++){
+            for(var i = 0; i <= height/sy; i++){
+                for(var e = 0; e <= width/sx; e++){
                     var px = (sx*e)+Trans.x;
                     var py = (sy*i)+Trans.y;
                     gfx.stroke(97, 97, 97);
@@ -85,30 +85,34 @@ var programCode = function(processingInstance) {
             gfx.pushMatrix();
             gfx.translate(Trans.x,Trans.y);
             // Draw construction lines
-            gfx.stroke(255, 242, 0,128);
+            gfx.stroke(255, 0, 40,240);
             gfx.strokeWeight(2);
-            // Draw construction lines
-            gfx.stroke(255, 0, 0,128);
-            gfx.strokeWeight(2);
-            for(var i = 0; i <= res*8; i++){
+            for(var i = 0; i <= res*10; i++){
                 // Horz
                 gfx.line(i*sx*8,0,i*sx*8,height);
                 // Vertical
                 gfx.line(0,i*sy*8,width, i*sy*8);
             }
-            gfx.stroke(0, 26, 255,128);
-            for(var i = 0; i <= res*8; i+=1){
+            gfx.stroke(0, 0, 255,180);
+            for(var i = 0; i <= res*10; i+=1){
                 // Horz
                 gfx.line(i*sx*4,0,i*sx*4,height);
                 // Vertical
                 gfx.line(0,i*sy*4,width, i*sy*4);
             }
-            gfx.stroke(255, 200, 0,40);
-            for(var i = 0; i <= res*8; i+=1){
+            gfx.stroke(255, 200, 0,60);
+            for(var i = 0; i <= res*10; i+=1){
                 // Horz
                 gfx.line(i*sx*2,0,i*sx*2,height);
                 // Vertical
                 gfx.line(0,i*sy*2,width, i*sy*2);
+            }
+            gfx.stroke(0, 180, 0,128);
+            for(var i = 0; i <= res*10; i+=1){
+                // Horz
+                gfx.line(i*sx*5*8,0,i*sx*5*8,height);
+                // Vertical
+                gfx.line(0,i*sy*5*8,width, i*sy*5*8);
             }
             gfx.popMatrix();
 

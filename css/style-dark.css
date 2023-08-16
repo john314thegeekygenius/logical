@@ -46,10 +46,13 @@ body {
 
 .svg-over-txt {
     fill: rgb(200,0,0);
+    pointer-events: none;
+    user-select: none;
 }
 
 .svg-thing {
     pointer-events: none;
+    user-select: none;
 }
 
 .side-bar {

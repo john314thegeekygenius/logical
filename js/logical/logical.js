@@ -36,7 +36,6 @@ function Logical() {
     this.select = null;
 
     // Page copies 
-
     this.camera = {};
     this.selected = [];
     this.grabbed = [];
@@ -241,23 +240,23 @@ Logical.prototype.mouseGateInteract= function(){
 };
 
 Logical.prototype.handleInput = function(){
-    var gs = 400*this.camera.zoom;
     var page = this.pages[this.cur_page];
 
     // Zoom in 
+    var cx = g_mouse.x-this.camera.x;
+    var cy = g_mouse.y-this.camera.y;
     if(g_mouse.wheel < 0){
         // Zoom in at the mouse (centered)
-        var gx = (g_mouse.x/gs);
-        var gy = (g_mouse.y/gs);
-        this.camera.x -= gx;
-        console.log(gx);
-
         this.camera.zoom *= 2;
+        this.camera.x -= cx;
+        this.camera.y -= cy;
         this.scene_changed = true;
     }
     // Zoom out 
     if(g_mouse.wheel > 0){
         this.camera.zoom /= 2;
+        this.camera.x += cx/2;
+        this.camera.y += cy/2;
         this.scene_changed = true;
     }
     if(this.camera.zoom < 1/128){
@@ -266,6 +265,7 @@ Logical.prototype.handleInput = function(){
     if(this.camera.zoom > 100){
         this.camera.zoom = 100;
     }
+    var gs = 400*this.camera.zoom;
 
     if(this.placerHandler() === false){
 
@@ -509,6 +509,10 @@ Logical.prototype.draw = function(){
         this.svg.rect(sx,sy,sw,sh);
         this.svg.setAlpha(255);
     }
+    this.svg.stroke(255,0,0);
+    this.svg.strokeWeight(5);
+    this.svg.noFill();
+    this.svg.point(this.camera.x/this.svg.p_width, this.camera.y/this.svg.p_height);
 
     // Draw an object floating above the screen if needed 
     if(this.holding.length ){
@@ -523,6 +527,10 @@ Logical.prototype.draw = function(){
         this.drawSVG(this.holding[0], this.holding[1],gx,gy,this.holding[3]);
     }
 
+    this.svg.fill(255,0,0);
+    this.svg.noStroke();
+    this.svg.textSize(20);
+    this.svg.text(this.camera.x+","+this.camera.y,0.1,0.1);
     this.scene_changed = true;
 };
 

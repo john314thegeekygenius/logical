@@ -445,7 +445,7 @@ svg_canvas.prototype.point = function(cx,cy){
         r:this.stroke_size,
         stroke: 0,
         stroke_w: 0,
-        fill: this.cur_color,
+        fill: this.stroke_val,
         alpha: this.col_alpha
     });
 };
