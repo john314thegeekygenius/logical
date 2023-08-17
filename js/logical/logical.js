@@ -34,6 +34,8 @@ function Logical() {
     this.pages = [];
     this.cur_page = 0;
     this.select = null;
+    this.user_wire = null;
+    this.hov_wire = null;
 
     // Page copies 
     this.camera = {};
@@ -127,6 +129,32 @@ Logical.prototype.mouseGateInteract= function(){
         g.hover = false;
         if(this.MouseOver(px+pa,py+pb,pw,ph)){
             g.hover = true;
+
+            if(g_mouse.clicked){
+                if(g_mouse.button === MB_RIGHT){
+                    // Rotate the hovered item 
+                    g.rot = (g.rot+1)%4;
+                }
+            }
+            var gitem = this.getItem(g.cat, g.key);
+            for(var e = 0; e < gitem.inputs.length; e+=2){
+                var iox = gitem.inputs[e];
+                var ioy = gitem.inputs[e+1];
+                // If the mouse is over the gate, see if we are over any IO ports 
+                if(this.MouseOver(iox,ioy,4,4)){
+                    // Wire points stuff 
+                    this.hov_wire = null;
+                }
+            }
+            for(var e = 0; e < gitem.outputs.length; e+=2){
+                var iox = gitem.outputs[e];
+                var ioy = gitem.outputs[e+1];
+                // If the mouse is over the gate, see if we are over any IO ports 
+                if(this.MouseOver(iox,ioy,4,4)){
+                    // Wire points stuff 
+                    this.hov_wire = null;
+                }
+            }
         }
     }
     if(g_mouse.pressed){
@@ -171,10 +199,6 @@ Logical.prototype.mouseGateInteract= function(){
                 this.camera.y = (g_mouse.y - g_mouse.cy) + this.camera.cy;
             }
         }
-        if(g_mouse.button === MB_RIGHT){
-            // Rotate the hovered item 
-        }
-
         this.scene_changed = true; // Useless?
     }else{
         this.grabbed = [];
@@ -237,6 +261,7 @@ Logical.prototype.mouseGateInteract= function(){
         this.grabbed[0] -= gx*gs;
         this.grabbed[1] -= gy*gs;
     }
+
 };
 
 Logical.prototype.handleInput = function(){
@@ -245,19 +270,23 @@ Logical.prototype.handleInput = function(){
     // Zoom in 
     var cx = g_mouse.x-this.camera.x;
     var cy = g_mouse.y-this.camera.y;
-    if(g_mouse.wheel < 0){
-        // Zoom in at the mouse (centered)
-        this.camera.zoom *= 2;
-        this.camera.x -= cx;
-        this.camera.y -= cy;
-        this.scene_changed = true;
+    if(this.camera.zoom < 100){
+        if(g_mouse.wheel < 0){
+            // Zoom in at the mouse (centered)
+            this.camera.zoom *= 2;
+            this.camera.x -= cx;
+            this.camera.y -= cy;
+            this.scene_changed = true;
+        }
     }
     // Zoom out 
-    if(g_mouse.wheel > 0){
-        this.camera.zoom /= 2;
-        this.camera.x += cx/2;
-        this.camera.y += cy/2;
-        this.scene_changed = true;
+    if(this.camera.zoom > 1/128){
+        if(g_mouse.wheel > 0){
+            this.camera.zoom /= 2;
+            this.camera.x += cx/2;
+            this.camera.y += cy/2;
+            this.scene_changed = true;
+        }
     }
     if(this.camera.zoom < 1/128){
         this.camera.zoom = 1/128;
@@ -285,9 +314,8 @@ Logical.prototype.handleInput = function(){
         if(g_keys[32].released === true){
             // Go to the center of circuit components 
             // Find the objects locations 
-            var infiniy = Math.pow(1000,100);
-            var minx = infiniy, miny = infiniy;
-            var maxx = -infiniy, maxy = -infiniy;
+            var minx = 0, miny = 0;
+            var maxx = 0, maxy = 0;
             for(var i = 0; i < page.circuit.gates.length; i++){
                 var g = page.circuit.gates[i];
                 var gx = g.x*gs;
@@ -296,12 +324,9 @@ Logical.prototype.handleInput = function(){
                 maxx = Math.max(maxx, gx+(g.box.w*100*this.camera.zoom));
                 miny = Math.min(miny, gy);
                 maxy = Math.max(maxy, gy+(g.box.h*100*this.camera.zoom));
-                console.log(g);
             }
-            console.log("min:"+minx+","+miny);
-            console.log("max:"+maxx+","+maxy);
             // Get the center 
-            var cx = (minx-maxx)/2;
+            var cx = (maxx-minx)/2;
             var cy = (maxy-miny)/2;
             var winx = this.svg.p_width/2;
             var winy = this.svg.p_height/2;
@@ -368,13 +393,14 @@ Logical.prototype.drawSVG = function(catagory,tag,x, y, rot){
         this.svg.strokeWeight(sw);
         this.svg.stroke(g_col_5);
         if(p[0] === "frect" || p[0] === "rect"){
-            px = (p[1]*ts/2.5)+tx;
-            py = (p[2]*ts/2.5)+ty;
+            px = (p[1]*ts/2.5);
+            py = (p[2]*ts/2.5);
             pw = p[3]*ts*40;
             ph = p[4]*ts*40;
             if(rot === 1){
                 t = pw; pw = ph; ph = t;
-                px -= pw;
+                px += pw/100;
+                px = ww-px;
             }else if(rot === 2){
                 px = ww-px;
                 py = wh-py;
@@ -383,6 +409,7 @@ Logical.prototype.drawSVG = function(catagory,tag,x, y, rot){
                 t = pw; pw = ph; ph = t;
                 py = py-ph;
             }
+            px += tx; py += ty;
             if(p[0]==="frect"){
                 this.svg.fill(g_col_3);
             }else{
@@ -458,17 +485,31 @@ Logical.prototype.draw = function(){
     var page = this.pages[this.cur_page];
     for(var i = 0; i < page.circuit.gates.length; i++){
         var g = page.circuit.gates[i];
-        var px = g.x*gs + this.camera.x;
-        var py = g.y*gs + this.camera.y;
-        var pw = g.box.w*5/gw;
-        var ph = g.box.h*5/gh;
-        var pa = (g.box.x)*this.camera.zoom*40;
-        var pb = (g.box.y)*this.camera.zoom*40;
-        px += pa;
-        py += pb;
-
+        if(g.selected){
+            this.svg.strokeDash(true);
+        }
         this.drawSVG(g.cat,g.key,g.x*gs,g.y*gs,g.rot);
+        this.svg.strokeDash(false);
         if(g.selected === true || g.hover){
+            var px = g.x*gs 
+            var py = g.y*gs
+            var pw = g.box.w*5/gw;
+            var ph = g.box.h*5/gh;
+            var pa = (g.box.x)*this.camera.zoom*40;
+            var pb = (g.box.y)*this.camera.zoom*40;
+            var t;
+            /*
+    var ts = (this.camera.zoom*100);
+        var ww = item.box.w*ts/2.5;
+        var wh = item.box.h*ts/2.5;*/
+            if(g.rot){
+                t = pw; pw = ph; ph = t;
+                pw *= gh/gw
+                ph *= gw/gh;
+            }
+            px += pa + this.camera.x;
+            py += pb + this.camera.y;
+
             this.svg.noStroke();
             if(g.hover){
                 this.svg.setAlpha(200);
@@ -478,6 +519,40 @@ Logical.prototype.draw = function(){
             this.svg.fill(g_col_4);
             this.svg.rect(px/this.svg.p_width,py/this.svg.p_height,pw,ph);
             this.svg.setAlpha(255);
+        }
+        // Draw the IO 
+        var gitem = this.getItem(g.cat, g.key);
+        for(var e = 0; e < gitem.inputs.length; e+=2){
+            var ts = this.camera.zoom*40;
+            var iox = gitem.inputs[e]*ts;
+            var ioy = gitem.inputs[e+1]*ts;
+            var ios = ts*8;
+            if(ios < 5) ios = 5;
+            iox += (g.x*gs)+this.camera.x;
+            ioy += (g.y*gs)+this.camera.y;
+            iox -= ios/2;
+            ioy -= ios/2;
+
+            this.svg.stroke(255,0,0);
+            this.svg.strokeWeight(2);
+            this.svg.noFill();
+            this.svg.rect(iox/this.svg.p_width, ioy/this.svg.p_height, ios/12, ios/12);
+        }
+        for(var e = 0; e < gitem.outputs.length; e+=2){
+            var ts = this.camera.zoom*40;
+            var iox = gitem.outputs[e]*ts;
+            var ioy = gitem.outputs[e+1]*ts;
+            var ios = ts*8;
+            if(ios < 5) ios = 5;
+            iox += (g.x*gs)+this.camera.x;
+            ioy += (g.y*gs)+this.camera.y;
+            iox -= ios/2;
+            ioy -= ios/2;
+
+            this.svg.stroke(0,255,0);
+            this.svg.strokeWeight(2);
+            this.svg.noFill();
+            this.svg.rect(iox/this.svg.p_width, ioy/this.svg.p_height, ios/12, ios/12);
         }
     }
 
@@ -500,8 +575,8 @@ Logical.prototype.draw = function(){
         // Scale into window view
         sx /= this.svg.p_width;
         sy /= this.svg.p_height;
-        sw /= this.svg.p_width/100;
-        sh /= this.svg.p_height/100;
+        sw /= this.svg.p_width;
+        sh /= this.svg.p_height;
 
         // Draw the selection box
         this.svg.setAlpha(64);

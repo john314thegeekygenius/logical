@@ -28,43 +28,15 @@ var built_gates = {};
 
 var r_svg = new svg_canvas(100,100); // Make a 100x100 canvas
 
-var DrawSVG = function(catagory,tag){
-    if( gate_json_list === undefined){
-        console.error("Gates not loaded?");
-        return;
-    }
-
-    var ts = 2;
-    var tx = 0;
-    var ty = 0;
-    var tw = r_svg.p_width;
-    var th = r_svg.p_height;
-
-    var item = gate_json_list[catagory];
-    if(item === undefined){
-        console.error("Bad catagory: "+catagory);
-        return ; // Bad item???
-    }
-    item = gate_json_list[catagory][tag];
-    if(item === undefined){
-        console.error("Bad tag: "+tag);
-        return ; // Bad item???
-    }
-    var svgthing = item["svg"];
-
-    if(svgthing === undefined){
-        console.error("No svg data for:"+catagory+":"+tag);
-        return;
-    }
-
+var CalcBounds = function(svgdat){
     var infiniy = Math.pow(1000,100);
     var minx = infiniy;
     var miny = infiniy;
     var maxx = -infiniy;
     var maxy = -infiniy;
 
-    for(var i = 0; i < svgthing.length; i++){
-        var p = svgthing[i];
+    for(var i = 0; i < svgdat.length; i++){
+        var p = svgdat[i];
         if(p[0] === "frect" || p[0] === "rect"){
             var px = p[1];
             var py = p[2];
@@ -102,16 +74,55 @@ var DrawSVG = function(catagory,tag){
             miny = Math.min(miny, ph);
         }
     }
+    return { minx:minx, 
+            miny:miny,
+            maxx:maxx,
+             maxy:maxy};
+
+};
+
+var DrawSVG = function(catagory,tag){
+    if( gate_json_list === undefined){
+        console.error("Gates not loaded?");
+        return;
+    }
+
+    var ts = 2;
+    var tx = 0;
+    var ty = 0;
+    var tw = r_svg.p_width;
+    var th = r_svg.p_height;
+
+    var item = gate_json_list[catagory];
+    if(item === undefined){
+        console.error("Bad catagory: "+catagory);
+        return ; // Bad item???
+    }
+    item = gate_json_list[catagory][tag];
+    if(item === undefined){
+        console.error("Bad tag: "+tag);
+        return ; // Bad item???
+    }
+    var svgthing = item["svg"];
+
+    if(svgthing === undefined){
+        console.error("No svg data for:"+catagory+":"+tag);
+        return;
+    }
+
     // Write to the database??? 
-    gate_json_list[catagory][tag]["box"] = { x:minx, 
-                    y:miny,
-                    w:maxx-minx,
-                    h:maxy-miny};
+    var bounds = CalcBounds(svgthing);
+    gate_json_list[catagory][tag]["box"] = {
+        x: bounds.minx,
+        y: bounds.miny,
+        w: bounds.maxx-bounds.minx,
+        h: bounds.maxy-bounds.miny,
+    };
 
     // Center the item
-    ts = Math.min(200/maxx, 200/maxy);
-    tx = (tw/2) - ((maxx+minx)*ts*20/tw);
-    ty = (th/2) - ((maxy+miny)*ts*20/th);
+    ts = Math.min(200/bounds.maxx, 200/bounds.maxy);
+    tx = (tw/2) - ((bounds.maxx+bounds.minx)*ts*20/tw);
+    ty = (th/2) - ((bounds.maxy+bounds.miny)*ts*20/th);
     
     for(var i = 0; i < svgthing.length; i++){
         var p = svgthing[i];
@@ -221,8 +232,27 @@ function updateItems(){
     svg_element.innerHTML = svg_txt;
 };
 
-function getItem(itemid){
-    
+function getItemHTML(cat,key){
+    var gc = built_gates[cat];
+    if(gc === undefined){
+        console.error("invalid catagory "+cat);
+        return "";
+    }
+    var gk = gc[key];
+    if(gk === undefined){
+        console.error("invalid gate key "+key);
+        return "";
+    }
+    var svg_txt = "";
+    var disc, cat, key, item;
+    disc = gk.name;
+    cat = gk.cat;
+    key = gk.name;
+    item = gk.data;
+    svg_txt += "<svg class=\"svg-item\" data-catagory=\""+cat+"\" data-key=\""+key+"\" title=\""+disc+"\" onclick=\"GrabItem(this)\">\n<svg viewBox=\"0 0 100 100\">\n";
+    svg_txt += item;
+    svg_txt += "</svg>\n</svg>";
+    return svg_txt;
 };
 
 

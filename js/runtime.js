@@ -24,11 +24,54 @@ function LoadGatesJson() {
             var jsonData = JSON.parse(jsonText);
             // Assign the loaded JSON data
             gate_json_list = jsonData;
-
+            if(gate_json_list["description"] !== undefined){
+                delete gate_json_list["description"];
+            }
+            if(gate_json_list["KA-Link"] !== undefined){
+                delete gate_json_list["KA-Link"];
+            }
         } catch (error) {
             console.error('Error parsing JSON:', error);
         }
     });
+};
+
+// Search stuff 
+var search_element = document.getElementById("search_feild");
+search_element.addEventListener('input', SearchQuery, false);
+
+function SearchQuery(e){
+    var search_txt = search_element.value.toLowerCase(); // We could make this 
+                                                         // a list seperated by ' '
+    var j_matches = [];
+    if(search_txt.length === 0){
+        updateItems();
+        return;
+    }
+    // Find all matches for all gates 
+    for (var cat in gate_json_list) {
+        for (var key in gate_json_list[cat]) {
+            var gateobj = gate_json_list[cat][key];
+            var json_str = gateobj.name;
+            // Make sure we remembered to add a name to it!
+            if(json_str === undefined){
+                continue;
+            }
+            // Make it matchable 
+            json_str = json_str.toLowerCase();
+            if(json_str.includes(search_txt)){
+                j_matches.push([cat,key]);
+            }
+        }
+    }
+
+    var svg_listbox= document.getElementById("svg-listbox");
+    var new_list = "";
+    // For all matches, replace the items_list element things
+    for(var i = 0; i < j_matches.length; i++){
+        new_list += getItemHTML(j_matches[i][0],j_matches[i][1]);
+    }
+    svg_listbox.innerHTML = new_list;
 };
 
 // File Stuff 

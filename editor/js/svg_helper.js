@@ -141,7 +141,9 @@ var programCode = function(processingInstance) {
                 for(var e = 0; e <= res*7; e++){
                     var px = (sx*e)+Trans.x;
                     var py = (sy*i)+Trans.y;
-                    mouseOverP(px,py);
+                    if(mouseX < width-80){
+                        mouseOverP(px,py);
+                    }
                 }
             }
 

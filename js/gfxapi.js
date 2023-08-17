@@ -17,8 +17,8 @@ var g_keys = new Array(256).fill().map(function() {
     };
 });
 
-document.addEventListener('keydown', onKeyDown, false);
-document.addEventListener('keyup', onKeyReleased, false);
+svgc_element.addEventListener('keydown', onKeyDown, false);
+svgc_element.addEventListener('keyup', onKeyReleased, false);
 
 function onKeyDown(e){
     g_keys[e.keyCode].pressed = true;
@@ -178,6 +178,9 @@ function makeSVG(obj){
         retstr += " stroke=rgb(" + stroke_s + ")";
         retstr += " stroke-width=\"" + obj.stroke_w + "\"";
     }
+    if(obj.s_dash === true){
+        retstr += " stroke-dasharray=\""+obj.stroke_w*2+","+obj.stroke_w*2+"\"";
+    }
     retstr += " fill=rgb(" + fill_s + ")";
     retstr += " opacity=\""+obj.alpha+"\""
     retstr += ">"+internal+"</"+obj.type+">\n";
@@ -193,6 +196,7 @@ function svg_canvas(id, qd){
     // Internal values of color stuffs
     this.stroke_val = 0;
     this.stroke_size = 1;
+    this.stroke_dash = false;
     this.cur_color = 0;
     this.col_alpha = 255;
     // Internal values for text stuff 
@@ -298,6 +302,9 @@ svg_canvas.prototype.noStroke = function(){
 svg_canvas.prototype.strokeWeight = function(w){
     this.stroke_size = w;
 };
+svg_canvas.prototype.strokeDash = function(b){
+    this.stroke_dash = b;
+};
 svg_canvas.prototype.setAlpha = function(t){
     this.col_alpha = t/255;
 };
@@ -337,6 +344,7 @@ svg_canvas.prototype.rect = function(rx,ry,w,h,r){
         r:r,
         stroke: this.stroke_val,
         stroke_w: this.stroke_size,
+        s_dash: this.stroke_dash,
         fill: this.cur_color,
         alpha: this.col_alpha
     });
@@ -356,6 +364,7 @@ svg_canvas.prototype.ellipse = function(cx,cy,w,h){
         ry:h.toFixed(2),
         stroke: this.stroke_val,
         stroke_w: this.stroke_size,
+        s_dash: this.stroke_dash,
         fill: this.cur_color,
         alpha: this.col_alpha
     });
@@ -374,6 +383,7 @@ svg_canvas.prototype.circle = function(cx,cy,r){
         r:r,
         stroke: this.stroke_val,
         stroke_w: this.stroke_size,
+        s_dash: this.stroke_dash,
         fill: this.cur_color,
         alpha: this.col_alpha
     });
@@ -402,6 +412,7 @@ svg_canvas.prototype.line = function(x1,y1,x2,y2){
         ey:(y2*100).toFixed(2),
         stroke: this.stroke_val,
         stroke_w: this.stroke_size,
+        s_dash: this.stroke_dash,
         fill: this.cur_color,
         alpha: this.col_alpha
     });
@@ -418,6 +429,7 @@ svg_canvas.prototype.text = function(t,x,y){
         font_size:this.font_size,
         stroke: this.stroke_val,
         stroke_w: this.stroke_size,
+        s_dash: this.stroke_dash,
         fill: this.cur_color,
         alpha: this.col_alpha
     });
@@ -445,6 +457,7 @@ svg_canvas.prototype.point = function(cx,cy){
         r:this.stroke_size,
         stroke: 0,
         stroke_w: 0,
+        s_dash: this.stroke_dash,
         fill: this.stroke_val,
         alpha: this.col_alpha
     });
