@@ -41,10 +41,9 @@ var search_element = document.getElementById("search_feild");
 search_element.addEventListener('input', SearchQuery, false);
 
 function SearchQuery(e){
-    var search_txt = search_element.value.toLowerCase(); // We could make this 
-                                                         // a list seperated by ' '
+    var search_txt = search_element.value.toLowerCase().split(' ');
     var j_matches = [];
-    if(search_txt.length === 0){
+    if(search_txt[0].length===0){
         updateItems();
         return;
     }
@@ -59,17 +58,27 @@ function SearchQuery(e){
             }
             // Make it matchable 
             json_str = json_str.toLowerCase();
-            if(json_str.includes(search_txt)){
-                j_matches.push([cat,key]);
+            for(var i = 0; i < search_txt.length; i++){
+                var stxt = search_txt[i];
+                if(stxt.length){
+                    if(json_str.includes(stxt) || key.includes(stxt)){
+                        j_matches.push([cat,key]);
+                    }
+                }
             }
         }
     }
+    // Clean up the list if there are duplicates
+    var uniqueMatches = [];
+    $.each(j_matches, function(i, el){
+        if($.inArray(el, uniqueMatches) === -1) uniqueMatches.push(el);
+    });
 
     var svg_listbox= document.getElementById("svg-listbox");
     var new_list = "";
     // For all matches, replace the items_list element things
-    for(var i = 0; i < j_matches.length; i++){
-        new_list += getItemHTML(j_matches[i][0],j_matches[i][1]);
+    for(var i = 0; i < uniqueMatches.length; i++){
+        new_list += getItemHTML(uniqueMatches[i][0],uniqueMatches[i][1]);
     }
     svg_listbox.innerHTML = new_list;
 };

@@ -197,10 +197,14 @@ function buildGates(){
         gate_list += "<li class=\"catagory-item\" id=\""+catstr+"\" onclick=\"CatChange(this)\">"+catdisc+"</li>\n";
         for (var i_key of Object.keys(gate_json_list[key])) {
             if(i_key === "name") { continue; } // Skip the name
+            var keydisc = gate_json_list[key][i_key]["name"];
+            if(keydisc === undefined){
+                keydisc = i_key;
+            }
             r_svg.clear();
             r_svg.noclip();
             DrawSVG(key,i_key);
-            built_gates[key][i_key] = {cat:key, name:i_key, data:r_svg.render()};
+            built_gates[key][i_key] = {cat:key, key:i_key, name:keydisc, data:r_svg.render()};
         }
     }
     // Replace the list with the full list of things 
@@ -222,10 +226,10 @@ function updateItems(){
         }else{
             disc = built_gates[current_catagory][i_key].name;
             cat = built_gates[current_catagory][i_key].cat;
-            key = built_gates[current_catagory][i_key].name;
+            key = built_gates[current_catagory][i_key].key;
             item = built_gates[current_catagory][i_key].data;
         }
-        svg_txt += "<svg class=\"svg-item\" data-catagory=\""+cat+"\" data-key=\""+key+"\" title=\""+disc+"\" onclick=\"GrabItem(this)\">\n<svg viewBox=\"0 0 100 100\">\n";
+        svg_txt += "<svg class=\"svg-item\" data-catagory=\""+cat+"\" data-key=\""+key+"\" onclick=\"GrabItem(this)\">\n<title>"+disc+"</title>\n<svg viewBox=\"0 0 100 100\">\n";
         svg_txt += item;
         svg_txt += "</svg>\n</svg>";
     }
@@ -247,9 +251,9 @@ function getItemHTML(cat,key){
     var disc, cat, key, item;
     disc = gk.name;
     cat = gk.cat;
-    key = gk.name;
+    key = gk.key;
     item = gk.data;
-    svg_txt += "<svg class=\"svg-item\" data-catagory=\""+cat+"\" data-key=\""+key+"\" title=\""+disc+"\" onclick=\"GrabItem(this)\">\n<svg viewBox=\"0 0 100 100\">\n";
+    svg_txt += "<svg class=\"svg-item\" data-catagory=\""+cat+"\" data-key=\""+key+"\" onclick=\"GrabItem(this)\">\n<title>"+disc+"</title>\n<svg viewBox=\"0 0 100 100\">\n";
     svg_txt += item;
     svg_txt += "</svg>\n</svg>";
     return svg_txt;
