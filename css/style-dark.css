@@ -212,3 +212,14 @@ body {
     text-align: center;
     color: #DDD;
 }
+
+.dialog {
+    display: flex;
+    text-align:center;
+    justify-content: center;
+}
+.dialog-in {
+    display:block;
+    margin-right: auto;
+    margin-left: auto;
+}

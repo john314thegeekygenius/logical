@@ -26,26 +26,59 @@
 
 function Logical() {
     this.svg = new svg_canvas('svg-ctx');
+    this.NukeProject();
+};
 
+Logical.prototype.NukeProject = function(){
+    // Make a new project 
+    this.name = "Untitled";
     this.holding = [];
-
-    this.scene_changed = true; // We want to update ONCE 
-
+    this.scene_changed = true;
+    this.modified = false;
     this.pages = [];
     this.cur_page = 0;
     this.select = null;
     this.user_wire = null;
     this.hov_wire = null;
-
     // Page copies 
     this.camera = {};
     this.selected = [];
     this.grabbed = [];
+
 };
 
 Logical.prototype.handlePage = function(){
     this.camera = this.pages[this.cur_page].camera;
     this.selected = this.pages[this.cur_page].selected;
+};
+
+Logical.prototype.LoadPrj = function(obj){
+    function deepCopy(target, source) {
+        for (const prop in source) {
+            if (source.hasOwnProperty(prop)) {
+                if (typeof source[prop] === 'object' && source[prop] !== null && !isFunction(source[prop])) {
+                    if (!target[prop]) {
+                        target[prop] = {};
+                    }
+                    deepCopy(target[prop], source[prop]);
+                } else if (!isFunction(source[prop]) && !isFunction(target[prop])) {
+                    target[prop] = source[prop];
+                }
+            }
+        }
+    }
+
+    function isFunction(obj) {
+        return typeof obj === 'function';
+    }
+    deepCopy(this, obj);
+};
+
+Logical.prototype.SavePrj = function(name){
+    this.name = name;
+    this.modified = false;
+    var objstr = JSON.stringify(this, null, 4);
+    return objstr;
 };
 
 Logical.prototype.holdItem = function(key1, key2){
@@ -101,6 +134,7 @@ Logical.prototype.placerHandler = function(){
                     selected:false,
                     hover:false
                 });
+                this.modified = true;
             }
             g_mouse.clicked = false;
         }
@@ -134,6 +168,7 @@ Logical.prototype.mouseGateInteract= function(){
                 if(g_mouse.button === MB_RIGHT){
                     // Rotate the hovered item 
                     g.rot = (g.rot+1)%4;
+                    this.modified = true;
                 }
             }
             var gitem = this.getItem(g.cat, g.key);
@@ -173,6 +208,7 @@ Logical.prototype.mouseGateInteract= function(){
                     // Select that one item 
                     g.selected = true;
                     skipdrag = true;
+                    this.modified = true;
                     break;
                 }
             }
@@ -197,6 +233,7 @@ Logical.prototype.mouseGateInteract= function(){
                 // Drag controls
                 this.camera.x = (g_mouse.x - g_mouse.cx) + this.camera.cx;
                 this.camera.y = (g_mouse.y - g_mouse.cy) + this.camera.cy;
+                this.modified = true;
             }
         }
         this.scene_changed = true; // Useless?
@@ -232,10 +269,12 @@ Logical.prototype.mouseGateInteract= function(){
                 // Reset the gate (we don't want to accumulate unless ctrl is pressed too?)
                 if(g_keys[17].pressed===false){
                     g.selected = false;
+                    this.modified = true;
                 }
                 if(hx+gs >= wx && hy+gs >= wy){
                     if(wx+ww >= hx+hw-gs && wy+wh >= hy+hh-gs){
                         g.selected = true;
+                        this.modified = true;
                     }
                 }
             }
@@ -277,6 +316,7 @@ Logical.prototype.handleInput = function(){
             this.camera.x -= cx;
             this.camera.y -= cy;
             this.scene_changed = true;
+            this.modified = true;
         }
     }
     // Zoom out 
@@ -286,6 +326,7 @@ Logical.prototype.handleInput = function(){
             this.camera.x += cx/2;
             this.camera.y += cy/2;
             this.scene_changed = true;
+            this.modified = true;
         }
     }
     if(this.camera.zoom < 1/128){
@@ -303,6 +344,7 @@ Logical.prototype.handleInput = function(){
             this.pages[this.cur_page].circuit.clearSelections();
             this.grabbed = [];
             this.scene_changed = true;
+            this.modified = true;
         }
         if(g_mouse.clicked || !g_mouse.pressed){
             this.camera.cx = this.camera.x;
@@ -331,6 +373,7 @@ Logical.prototype.handleInput = function(){
             var winx = this.svg.p_width/2;
             var winy = this.svg.p_height/2;
             page.scrollCamera(winx-cx,winy-cy);
+            this.modified = true;
         }
         // Delete gates 
         if(g_keys[46].released === true){
@@ -346,6 +389,7 @@ Logical.prototype.handleInput = function(){
             for(var i = 0; i < rmi.length; i++){
                 this.pages[this.cur_page].circuit.deleteGate(rmi[i]);
             }
+            this.modified = true;
         }
     }
 

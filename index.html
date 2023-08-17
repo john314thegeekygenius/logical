@@ -29,8 +29,10 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Logical</title>
         <link rel="stylesheet" href="css/style-dark.css"></link>
-        <script src="js/jquery-3.7.0.js"></script>
-        <script src="js/require.js"></script>
+        <link rel="stylesheet" href="css/jquery-ui.css"></link><!-- code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css -->
+        <script src="js/jquery-3.7.0.js"></script> <!-- https://code.jquery.com/jquery-3.7.0.js -->
+        <script src="js/jquery-ui.js"></script> <!-- https://code.jquery.com/ui/1.13.2/jquery-ui.js -->
+        <script src="js/require.js"></script> <!-- https://requirejs.org/docs/release/2.3.6/minified/require.js -->
     </head>
     <body width="100%" height="100%">
         <!-- Create a menu bar at the top -->
@@ -38,6 +40,7 @@
             <button id="newfile" class="menu-item" onclick="NewCircuit()">New</button>
             <button id="openfile" class="menu-item" onclick="LoadCircuit()">Load</button>
             <button id="savefile" class="menu-item" onclick="SaveCircuit()">Save</button>
+            <span id="prj_title" class="menu-text"></span>
         </div>
         <!-- Create a tab bar at the top -->
         <div class="tab-bar" id="tabs-list">
@@ -68,6 +71,10 @@
 		<div class="footer-bar">
             <p class="footer-text">Logical - Digital Logic Simulator Copyright© 2023 Jonathan Clevenger</p>
         </div>
+        <!-- Create a dialog box div -->
+        <div id="dialog-confirm" tabindex="-1" title="Confirm">
+        </div>
+
         <!-- Run the scripts -->
         <script type="text/javascript" src="js/gfxapi.js"></script>
         <script type="text/javascript" src="js/logical/circuit.js"></script>

@@ -84,38 +84,220 @@ function SearchQuery(e){
 };
 
 // File Stuff 
-function NewCircuit(){
 
+var confirmation = null;
+var conf_element = document.getElementById("dialog-text");
+var conf_input = "";
+
+function Confirm(txt, y_txt, n_txt, title="Confirm"){
+    // Make a dialog that gets the users input on if they want to do an action
+    var dilog = {
+      resizable: false,
+      height: "auto",
+      width: 400,
+      modal: true,
+        buttons:{}
+    };
+    dilog.buttons[y_txt] = function() {
+        $( this ).dialog( "close" );
+        var te = document.getElementById("dialog-confirm");
+        if(te){ te.innerHTML = ""; }
+        if(confirmation !== null){
+            confirmation[0]();
+        }
+    };
+    dilog.buttons[n_txt] = function() {
+        $( this ).dialog( "close" );
+        var te = document.getElementById("dialog-confirm");
+        if(te){ te.innerHTML = ""; }
+        if(confirmation !== null){
+            confirmation[1]();
+        }
+
+    }
+    $( function() {
+        $( "#dialog-confirm" ).dialog(dilog);
+    });
+    var te = document.getElementById("dialog-confirm");
+    if(te){
+        te.setAttribute("title",title);
+        te.innerHTML = "<p id=\"dialog-text\" class=\"dialog\">"+txt+"</p>";
+    }
+    var ce = document.getElementById("ui-id-1");
+    if(ce){
+        ce.textContent = title;
+    }
 };
 
-function LoadCircuit(){
-    // creating input on-the-fly
-    var input = $(document.createElement("input"));
-    input.attr("type", "file");
-    input.trigger("click"); // opening dialog
-    console.log(input);
-    // Read the file 
-   fetch("file:///home/jonathan/projects/logical/index.html")
-  .then(response => response.text())
-  .then(response => {
-      console.log(response);
-  })
-  .catch((e) => {
-      console.error(e)
-      alert("error reading json -"+e);
-  });
+function Alert(txt, ok_txt="Ok"){
+    // Make a dialog that gets the users input on if they want to do an action
+    var dilog = {
+      resizable: false,
+      height: "auto",
+      width: 400,
+      modal: true,
+        buttons:{}
+    };
+    dilog.buttons[ok_txt] = function() {
+        $( this ).dialog( "close" );
+        var te = document.getElementById("dialog-confirm");
+        if(te){ te.innerHTML = ""; }
+    };
+    $( function() {
+        $( "#dialog-confirm" ).dialog(dilog);
+    });
+    var te = document.getElementById("dialog-confirm");
+    if(te){
+        te.innerHTML = "<p id=\"dialog-text\" class=\"dialog\">"+txt+"</p>";
+        te.setAttribute("title","Alert");
+    }
+    var ce = document.getElementById("ui-id-1");
+    if(ce){
+        ce.textContent = "Alert!";
+    }
+};
+
+function Input(txt, y_txt, n_txt, title="Input"){
+    // Make a dialog that gets the users input on if they want to do an action
+    var dilog = {
+      resizable: false,
+      height: "auto",
+      width: 400,
+      modal: true,
+        buttons:{}
+    };
+    dilog.buttons[y_txt] = function() {
+        if(confirmation !== null){
+            var ie = document.getElementById("conf_txt");
+            conf_input = ie.value;
+            confirmation[0]();
+        }
+        $( this ).dialog( "close" );
+        var te = document.getElementById("dialog-confirm");
+        if(te){ te.innerHTML = ""; }
+    };
+    dilog.buttons[n_txt] = function() {
+        $( this ).dialog( "close" );
+        var te = document.getElementById("dialog-confirm");
+        if(te){ te.innerHTML = ""; }
+        if(confirmation !== null){
+            confirmation[1]();
+        }
+
+    }
+    $( function() {
+        $( "#dialog-confirm" ).dialog(dilog);
+    });
+    var te = document.getElementById("dialog-confirm");
+    if(te){
+        te.setAttribute("title",title);
+        te.innerHTML = "<p id=\"dialog-text\" class=\"dialog\">"+txt+"</p>";
+        te.innerHTML += "<input type=\"text\" id=\"conf_txt\" class=\"dialog-in\" name=\"input\"></input>";
+    }
+    var ce = document.getElementById("ui-id-1");
+    if(ce){
+        ce.textContent = title;
+    }
+};
 
 
+function subNewCircuit(){
+    console.log("Making new project");
+    logical.NukeProject();
+    // Add a new pages to get started 
+    for(var i = 0; i < 10; i++){
+        AddTab();
+    }
+    SetTab(1);
+    UpdateTitle();
+};
+
+function NewCircuit(){
+    if(logical.modified){
+        confirmation = [
+            subNewCircuit,
+            function(){}
+        ];
+        Confirm("Are you sure you want to start a new project? (Current project is not saved!)","Overwrite","No");
+    }else{
+        subNewCircuit();
+    }
+};
+
+// Open a dialog function 
+function openFileDialog(accept, multy = false, callback) { 
+    var inputElement = document.createElement("input");
+    inputElement.type = "file";
+    inputElement.accept = accept; // Note Edge does not support this attribute
+    if (multy) {
+        inputElement.multiple = multy;
+    }
+    if (typeof callback === "function") {
+         inputElement.addEventListener("change", callback);
+    }
+    inputElement.dispatchEvent(new MouseEvent("click")); 
+}
+
+function SaveFile(fname, content){
+    var bb = new Blob([content], { type: "application/json" });
+    var a = document.createElement('a');
+    a.download = fname;
+    a.href = window.URL.createObjectURL(bb);
+    a.click();
+}
+
+function subLoadCircuit(e){
+    [...this.files].forEach(file => {
+        var fr=new FileReader();
+        fr.onload=function(){
+            var jstr;
+            try {
+                jstr = JSON.parse(fr.result);
+            } catch (e) {
+                console.error("Invalid JSON file:"+file.name);
+                Alert("Invalid Project File!");
+                return;
+            }
+            logical.LoadPrj(jstr);
+            // Fix the tab stuff 
+            FixTabs(logical.cur_page+1);
+            // Update the title 
+            UpdateTitle();
+        }
+        fr.readAsText(file);
+    });
+};
+
+async function LoadCircuit(){
+    console.log("Loading Circuit...");
+    if(logical.modified){
+        confirmation = [
+            function(){
+                openFileDialog(".json,text/plain", false, subLoadCircuit);
+            },
+            function(){}
+        ];
+        Confirm("Are you sure you want to load a project? (Current project is not saved!)","Overwrite","No");
+    }else{
+        openFileDialog(".json,text/plain", false, subLoadCircuit);
+    }
 };
 
 function SaveCircuit(){
-
+    confirmation = [
+        function(){
+            SaveFile(conf_input, logical.SavePrj(conf_input));
+            UpdateTitle();
+        },
+        function(){}
+    ];
+    Input("Enter Project Name", "Save", "Cancel", "Save");
 };
 
 // Page stuff 
 function SetTab(id){
     if(id < 1 || id > logical.pages.length) return ; // ????
-    // Find old element 
+        // Find old element 
     var element = document.getElementById("page_"+(logical.cur_page+1));
     if(element !== null){
         element.setAttribute("class", "tab-button"); 
@@ -127,6 +309,21 @@ function SetTab(id){
     console.log("Switched to page "+id);
 };
 
+function FixTabs(id){
+    if(id < 1 || id > logical.pages.length) return ; // ????
+    // Find old element 
+    for(var i = 0; i < logical.pages.length; i++){
+        var element = document.getElementById("page_"+i);
+        if(element !== null){
+            element.setAttribute("class", "tab-button"); 
+        }
+    }
+    logical.cur_page = id-1;
+    // Get new element
+    element = document.getElementById("page_"+id);
+    element.setAttribute("class", "tab-button-selected"); 
+    console.log("Switched to page "+id);
+};
 function AddTab(){
     // Get the tabs element 
     var element = document.getElementById("tabs-list");
@@ -153,6 +350,14 @@ function GrabItem(e){
     logical.holdItem(cat,key);
 };
 
+function UpdateTitle(){
+    var e = document.getElementById("prj_title");
+    e.textContent = logical.name;
+    if(logical.modified){
+        e.textContent += "*";
+    }
+};
+
 function initFunction(){
     // Add a new page to get started 
     for(var i = 0; i < 10; i++){
@@ -163,6 +368,8 @@ function initFunction(){
     loadColors();
     // Load the gates 
     LoadGatesJson();
+    // Update the title 
+    UpdateTitle();
 };
 
 var loaded_gates = false;
@@ -181,7 +388,11 @@ setInterval(function loaderTimed(){
 
 // Setup a loop for the simulator
 setInterval(function myFunction(){
+    var oldmod = logical.modified;
     logical.run()
+    if(logical.modified !== oldmod){
+        UpdateTitle();
+    }
 }, 1000/60);
 
 window.onload = initFunction;
