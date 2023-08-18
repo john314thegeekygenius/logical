@@ -30,8 +30,10 @@
         <title>Logical</title>
         <link rel="stylesheet" href="css/style-dark.css"></link>
         <link rel="stylesheet" href="css/jquery-ui.css"></link><!-- code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css -->
+        <!-- Load some javascript -->
         <script src="js/jquery-3.7.0.js"></script> <!-- https://code.jquery.com/jquery-3.7.0.js -->
         <script src="js/jquery-ui.js"></script> <!-- https://code.jquery.com/ui/1.13.2/jquery-ui.js -->
+        <script src="js/jspdf.min.js"></script> <!-- https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.3.2/jspdf.min.js -->
         <script src="js/require.js"></script> <!-- https://requirejs.org/docs/release/2.3.6/minified/require.js -->
     </head>
     <body width="100%" height="100%">
@@ -40,7 +42,9 @@
             <button id="newfile" class="menu-item" onclick="NewCircuit()">New</button>
             <button id="openfile" class="menu-item" onclick="LoadCircuit()">Load</button>
             <button id="savefile" class="menu-item" onclick="SaveCircuit()">Save</button>
+            <button id="printpage" class="menu-item" onclick="PrintCircuit()">Print</button>
             <span id="prj_title" class="menu-text"></span>
+            <input type="range" class="menu-slider" id="sim-speed" name="simulation_speed" min="1" max="500" onchange="SetSimSpeed(this)"> 25 ms</label>
         </div>
         <!-- Create a tab bar at the top -->
         <div class="tab-bar" id="tabs-list">

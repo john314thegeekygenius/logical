@@ -40,6 +40,7 @@ Logical.prototype.NukeProject = function(){
     this.select = null;
     this.user_wire = null;
     this.hov_wire = null;
+    this.dragging = false;
     // Page copies 
     this.camera = {};
     this.selected = [];
@@ -151,43 +152,45 @@ Logical.prototype.mouseGateInteract= function(){
     var gs = 400*this.camera.zoom;
     var page = this.pages[this.cur_page];
 
-    // Select objects 
-    for(var i = page.circuit.gates.length-1; i >=0 ; i--){
-        var g = page.circuit.gates[i];
-        var px = g.x*gs + this.camera.x;
-        var py = g.y*gs + this.camera.y;
-        var pw = (g.box.w)*this.camera.zoom*40;
-        var ph = (g.box.h)*this.camera.zoom*40;
-        var pa = (g.box.x)*this.camera.zoom*40;
-        var pb = (g.box.y)*this.camera.zoom*40;
-        g.hover = false;
-        if(this.MouseOver(px+pa,py+pb,pw,ph)){
-            g.hover = true;
+    if(this.dragging === false){
+        // Select objects 
+        for(var i = page.circuit.gates.length-1; i >=0 ; i--){
+            var g = page.circuit.gates[i];
+            var px = g.x*gs + this.camera.x;
+            var py = g.y*gs + this.camera.y;
+            var pw = (g.box.w)*this.camera.zoom*40;
+            var ph = (g.box.h)*this.camera.zoom*40;
+            var pa = (g.box.x)*this.camera.zoom*40;
+            var pb = (g.box.y)*this.camera.zoom*40;
+            g.hover = false;
+            if(this.MouseOver(px+pa,py+pb,pw,ph)){
+                g.hover = true;
 
-            if(g_mouse.clicked){
-                if(g_mouse.button === MB_RIGHT){
-                    // Rotate the hovered item 
-                    g.rot = (g.rot+1)%4;
-                    this.modified = true;
+                if(g_mouse.clicked){
+                    if(g_mouse.button === MB_RIGHT){
+                        // Rotate the hovered item 
+                        g.rot = (g.rot+1)%4;
+                        this.modified = true;
+                    }
                 }
-            }
-            var gitem = this.getItem(g.cat, g.key);
-            for(var e = 0; e < gitem.inputs.length; e+=2){
-                var iox = gitem.inputs[e];
-                var ioy = gitem.inputs[e+1];
-                // If the mouse is over the gate, see if we are over any IO ports 
-                if(this.MouseOver(iox,ioy,4,4)){
-                    // Wire points stuff 
-                    this.hov_wire = null;
+                var gitem = this.getItem(g.cat, g.key);
+                for(var e = 0; e < gitem.inputs.length; e+=2){
+                    var iox = gitem.inputs[e];
+                    var ioy = gitem.inputs[e+1];
+                    // If the mouse is over the gate, see if we are over any IO ports 
+                    if(this.MouseOver(iox,ioy,4,4)){
+                        // Wire points stuff 
+                        this.hov_wire = null;
+                    }
                 }
-            }
-            for(var e = 0; e < gitem.outputs.length; e+=2){
-                var iox = gitem.outputs[e];
-                var ioy = gitem.outputs[e+1];
-                // If the mouse is over the gate, see if we are over any IO ports 
-                if(this.MouseOver(iox,ioy,4,4)){
-                    // Wire points stuff 
-                    this.hov_wire = null;
+                for(var e = 0; e < gitem.outputs.length; e+=2){
+                    var iox = gitem.outputs[e];
+                    var ioy = gitem.outputs[e+1];
+                    // If the mouse is over the gate, see if we are over any IO ports 
+                    if(this.MouseOver(iox,ioy,4,4)){
+                        // Wire points stuff 
+                        this.hov_wire = null;
+                    }
                 }
             }
         }
@@ -233,12 +236,14 @@ Logical.prototype.mouseGateInteract= function(){
                 // Drag controls
                 this.camera.x = (g_mouse.x - g_mouse.cx) + this.camera.cx;
                 this.camera.y = (g_mouse.y - g_mouse.cy) + this.camera.cy;
+                this.dragging = true;
                 this.modified = true;
             }
         }
         this.scene_changed = true; // Useless?
     }else{
         this.grabbed = [];
+        this.dragging = false; 
         // Select any objects 
         if(this.select !== null){
             // Get the area 

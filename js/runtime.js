@@ -2,6 +2,7 @@
 // Runs the app script here 
 //
 
+
 // Configure RequireJS
 require.config({
     paths: {
@@ -292,6 +293,26 @@ function SaveCircuit(){
         function(){}
     ];
     Input("Enter Project Name", "Save", "Cancel", "Save");
+};
+
+function PrintCircuit(e){
+    var doc = new jsPDF();
+    var specialElementHandlers = {
+        '#editor': function (element, renderer) {
+            return true;
+        }
+    };
+
+
+    doc.fromHTML($('#svg-ctx').html(), 15, 15, {
+        'width': 170,
+        'elementHandlers': specialElementHandlers
+    });
+    var svge = document.getElementById("svg-ctx");
+    // Do somthing with the svg stuff, idk
+    //doc.addSVG(svge.innerHTML, 20, 20, doc.internal.pageSize.width - 20*2)
+    doc.save('logical-printout.pdf');
+
 };
 
 // Page stuff 

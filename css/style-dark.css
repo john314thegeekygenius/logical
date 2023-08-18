@@ -156,13 +156,27 @@ body {
     height: 20px;
     border-bottom: 2px solid #666;
 }
-
 .menu-item {
     background-color: #666666;
     height: 100%;
 }
 .menu-item:hover {
     background-color: #AAAAAA;
+}
+.menu-text {
+}
+.menu-span {
+    padding:none;
+    display:inline-block;
+}
+.menu-slider {
+    padding:none;
+    margin-left:50px;
+    overflow: hidden;
+    width: 100px;
+    height:5px;
+}
+.menu-label {
 }
 
 .tab-bar {
@@ -223,3 +237,4 @@ body {
     margin-right: auto;
     margin-left: auto;
 }
+
