@@ -64,5 +64,3 @@ Page.prototype.updateCamera = function(){
     }
 };
 
-
-
