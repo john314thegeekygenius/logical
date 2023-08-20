@@ -164,6 +164,15 @@ body {
     background-color: #AAAAAA;
 }
 .menu-text {
+    position: absolute;
+    padding:none;
+    margin-top: 0.0em; 
+    margin-bottom: 0em;
+    top:2px;
+    left:400 px;
+    display:inline-block;
+    text-size:10px;
+    overflow: hidden;
 }
 .menu-span {
     padding:none;
@@ -171,12 +180,18 @@ body {
 }
 .menu-slider {
     padding:none;
-    margin-left:50px;
+    margin-left:75px;
     overflow: hidden;
     width: 100px;
     height:5px;
 }
 .menu-label {
+}
+.menu-spacer {
+    padding:none;
+    margin-left:50px;
+    overflow:hidden;
+
 }
 
 .tab-bar {

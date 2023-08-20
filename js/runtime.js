@@ -371,12 +371,35 @@ function GrabItem(e){
     logical.holdItem(cat,key);
 };
 
+const prjnlen = 8;
 function UpdateTitle(){
     var e = document.getElementById("prj_title");
-    e.textContent = logical.name;
+    var newtitle = logical.name;
+    if(newtitle.length>prjnlen){
+        newtitle = newtitle.substring(logical.name, prjnlen) + "..";
+    }
+    e.textContent = newtitle;
     if(logical.modified){
         e.textContent += "*";
     }
+    // Update the tab name:
+    e = document.getElementById("title-tab");
+    e.textContent = "Logical - " + logical.name;
+
+    console.log("Set project title to: " + logical.name);
+};
+
+// Other stuff 
+function SetSimSpeed(speed){
+    var e = document.getElementById("sim-speed");
+    e.value = speed;
+    e = document.getElementById("sim-readout");
+    e.innerText = speed.toString() + "ms";
+    console.log("Sim Speed set to: "+speed);
+};
+
+function SimState(){
+    console.error("TODO: Add simualtion states");
 };
 
 function initFunction(){

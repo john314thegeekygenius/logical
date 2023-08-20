@@ -24,6 +24,40 @@
     *
 */
 
+var uuid_cnt = Math.random();
+
+function GetUUID(){
+    // TODO:
+    // Make a better UUID generator ???
+    var result = 0xDE3DBEAF;
+    result += uuid_cnt<<3;
+    result -= uuid_cnt;
+    uuid_cnt += 1;
+    return result;
+};
+
+function Wire(name){
+    this.uuid = GetUUID();
+    if(name === undefined){
+        this.name = "wire_"+this.uuid;
+    }else{
+        this.name = name;
+    }
+    this.links = [];
+};
+
+function Gate(type, name){
+    this.type = type;
+    this.uuid = GetUUID();
+    this.data = "";
+    this.inputs = [];
+    this.outputs = [];
+    if(name === undefined){
+        this.name = "gate_"+this.uuid;
+    }else{
+        this.name = name;
+    }
+};
 
 
 function Circuit(){
@@ -33,10 +67,13 @@ function Circuit(){
 
 Circuit.prototype.addGate = function(info){
     this.gates.push(info);
+    // ???
+    //this.gates.push(new Gate(info));
 };
 
 Circuit.prototype.addWire = function(info){
     this.wires.push(info);
+    //this.wires.push(new Wire(info));
 };
 
 Circuit.prototype.clearSelections = function(){

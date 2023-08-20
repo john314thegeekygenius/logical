@@ -40,6 +40,7 @@ Logical.prototype.NukeProject = function(){
     this.select = null;
     this.user_wire = null;
     this.hov_wire = null;
+    this.c_wire = null;
     this.dragging = false;
     // Page copies 
     this.camera = {};
@@ -151,6 +152,10 @@ Logical.prototype.placerHandler = function(){
 Logical.prototype.mouseGateInteract= function(){
     var gs = 400*this.camera.zoom;
     var page = this.pages[this.cur_page];
+    var skipdrag = false;
+
+    // We don't want a continual hovering of an io point
+    this.hov_wire = null;
 
     if(this.dragging === false){
         // Select objects 
@@ -173,30 +178,84 @@ Logical.prototype.mouseGateInteract= function(){
                         this.modified = true;
                     }
                 }
-                var gitem = this.getItem(g.cat, g.key);
-                for(var e = 0; e < gitem.inputs.length; e+=2){
-                    var iox = gitem.inputs[e];
-                    var ioy = gitem.inputs[e+1];
-                    // If the mouse is over the gate, see if we are over any IO ports 
-                    if(this.MouseOver(iox,ioy,4,4)){
-                        // Wire points stuff 
-                        this.hov_wire = null;
+            }
+            var gitem = this.getItem(g.cat, g.key);
+            for(var e = 0; e < gitem.inputs.length; e+=2){
+                var ts = this.camera.zoom*40;
+                var iox = gitem.inputs[e]*ts;
+                var ioy = gitem.inputs[e+1]*ts;
+                var ios = ts*8;
+                if(ios < 5) ios = 5;
+                iox += (g.x*gs)+this.camera.x;
+                ioy += (g.y*gs)+this.camera.y;
+                iox -= ios/2;
+                ioy -= ios/2;
+                // If the mouse is over the gate, see if we are over any IO ports 
+                if(this.MouseOver(iox,ioy,ios,ios)){
+                    // Wire points stuff 
+                    this.hov_wire = {gate:i, io:'i', id:e/2};
+                    console.log(this.hov_wire);
+                    if(g_mouse.pressed){
+                        // Skip the dragging motion if we are over an io point 
+                        skipdrag = true;
+                    }
+                    if(g_mouse.clicked){
+                        // If we are already holding a wire, connect it 
+                        if(this.c_wire !== null){
+                            //var w = this.pages[this.cur_page].addWire();
+                            //w.connect(gateA, gateB);
+                            console.log("Connected wire!");
+                        }else{
+                        // We clicked to make a wire, so store it
+                        this.c_wire = {
+                            gate:i, 
+                            io:'i', 
+                            id:e/2,
+                            x:gitem.outputs[e]+g.x,
+                            y:gitem.outputs[e+1]+g.y
+                        };
+                        }
+                        console.log(this.c_wire);
                     }
                 }
-                for(var e = 0; e < gitem.outputs.length; e+=2){
-                    var iox = gitem.outputs[e];
-                    var ioy = gitem.outputs[e+1];
-                    // If the mouse is over the gate, see if we are over any IO ports 
-                    if(this.MouseOver(iox,ioy,4,4)){
-                        // Wire points stuff 
-                        this.hov_wire = null;
+            }
+            for(var e = 0; e < gitem.outputs.length; e+=2){
+                var ts = this.camera.zoom*40;
+                var iox = gitem.outputs[e]*ts;
+                var ioy = gitem.outputs[e+1]*ts;
+                var ios = ts*8;
+                if(ios < 5) ios = 5;
+                iox += (g.x*gs)+this.camera.x;
+                ioy += (g.y*gs)+this.camera.y;
+                iox -= ios/2;
+                ioy -= ios/2;
+                // If the mouse is over the gate, see if we are over any IO ports 
+                if(this.MouseOver(iox,ioy,ios,ios)){
+                    // Wire points stuff 
+                    this.hov_wire = {gate:i, io:'o', id:e/2};
+                    if(g_mouse.pressed){
+                        // Skip the dragging motion if we are over an io point 
+                        skipdrag = true;
+                    }
+                    if(g_mouse.clicked){
+                        // We clicked to make a wire, so store it
+                        this.c_wire = {
+                            gate:i, 
+                            io:'o', 
+                            id:e/2,
+                            x:gitem.outputs[e]+g.x,
+                            y:gitem.outputs[e+1]+g.y
+                        };
+                        console.log(this.c_wire);
                     }
                 }
             }
         }
     }
+    // TODO:
+    // Make sure if we are hovering an IO point, not to select the gate 
+    // if the mouse is pressed
     if(g_mouse.pressed){
-        var skipdrag = false;
         if(this.grabbed.length===0 && this.select === null){
             // Move Objects 
             for(var i = 0; i < page.circuit.gates.length; i++){
@@ -398,6 +457,39 @@ Logical.prototype.handleInput = function(){
         }
     }
 
+    // Movement 
+    if(g_keys[38].pressed){
+        this.camera.y += 10;
+    }
+    if(g_keys[40].pressed){
+        this.camera.y -= 10;
+    }
+    if(g_keys[37].pressed){
+        this.camera.x += 10;
+    }
+    if(g_keys[39].pressed){
+        this.camera.x -= 10;
+    }
+
+    // Clipboard 
+    if(g_keys[17].pressed){
+        if(g_keys[67].released){
+            // Copy the selected items 
+        }
+        if(g_keys[88].released){
+            // Cut the selected items
+        }
+        if(g_keys[86].released){
+            // Paste the stored items 
+        }
+        if(g_keys[90].released){
+            // Undo changes????
+        }
+        if(g_keys[89].released){
+            // Redo changes???
+        }
+    }
+
     page.updateCamera();
 
     g_mouse.released = false;
@@ -529,7 +621,8 @@ Logical.prototype.draw = function(){
     }
     // Rescale into the correct cooords 
     var gs = 400*this.camera.zoom;
-    
+    var ts = this.camera.zoom*40;
+
     // Draw any gates
     var page = this.pages[this.cur_page];
     for(var i = 0; i < page.circuit.gates.length; i++){
@@ -572,7 +665,6 @@ Logical.prototype.draw = function(){
         // Draw the IO 
         var gitem = this.getItem(g.cat, g.key);
         for(var e = 0; e < gitem.inputs.length; e+=2){
-            var ts = this.camera.zoom*40;
             var iox = gitem.inputs[e]*ts;
             var ioy = gitem.inputs[e+1]*ts;
             var ios = ts*8;
@@ -582,13 +674,19 @@ Logical.prototype.draw = function(){
             iox -= ios/2;
             ioy -= ios/2;
 
-            this.svg.stroke(255,0,0);
+            if(this.hov_wire !== null && 
+                this.hov_wire.gate == i &&
+                (this.hov_wire.id*2) == e &&
+                this.hov_wire.io == 'i'){
+                this.svg.stroke(255,255,0);
+            }else{
+                this.svg.stroke(255,0,0);
+            }
             this.svg.strokeWeight(2);
             this.svg.noFill();
             this.svg.rect(iox/this.svg.p_width, ioy/this.svg.p_height, ios/12, ios/12);
         }
         for(var e = 0; e < gitem.outputs.length; e+=2){
-            var ts = this.camera.zoom*40;
             var iox = gitem.outputs[e]*ts;
             var ioy = gitem.outputs[e+1]*ts;
             var ios = ts*8;
@@ -598,19 +696,38 @@ Logical.prototype.draw = function(){
             iox -= ios/2;
             ioy -= ios/2;
 
-            this.svg.stroke(0,255,0);
+            if(this.hov_wire !== null && 
+                this.hov_wire.gate == i &&
+                (this.hov_wire.id*2) == e &&
+                this.hov_wire.io == 'o'){
+                this.svg.stroke(255,255,0);
+            }else{
+                this.svg.stroke(0,255,0);
+            }
             this.svg.strokeWeight(2);
             this.svg.noFill();
             this.svg.rect(iox/this.svg.p_width, ioy/this.svg.p_height, ios/12, ios/12);
         }
+    }
+    // var gs = 800*this.camera.zoom;
+
+    // Draw a wire to the mouse 
+    if(this.c_wire !== null){
+        var iox = (this.c_wire.x*ts)+this.camera.x;
+        var ioy = (this.c_wire.y*ts)+this.camera.y;
+        var mx = g_mouse.x;
+        var my = g_mouse.y;
+        this.svg.stroke(255,0,0);
+        this.svg.line(iox/this.svg.p_width,ioy/this.svg.p_height,mx/this.svg.p_width,my/this.svg.p_height);
+
     }
 
     // Draw a select box if needed 
     if(this.select !== null){
         var sx = this.select.sx;
         var sy = this.select.sy;
-        var sw = this.select.sw;
-        var sh = this.select.sh;
+        var sw = this.select.sw*100;
+        var sh = this.select.sh*100;
         // Keep the values absolute
         if(sw < 0){
             sx += sw;
@@ -629,6 +746,7 @@ Logical.prototype.draw = function(){
 
         // Draw the selection box
         this.svg.setAlpha(64);
+        this.svg.stroke(g_col_5);
         this.svg.fill(g_col_6);
         this.svg.rect(sx,sy,sw,sh);
         this.svg.setAlpha(255);
@@ -654,7 +772,7 @@ Logical.prototype.draw = function(){
     this.svg.fill(255,0,0);
     this.svg.noStroke();
     this.svg.textSize(20);
-    this.svg.text(this.camera.x+","+this.camera.y,0.1,0.1);
+    this.svg.text(this.camera.x.toFixed()+","+this.camera.y.toFixed(),0.1,0.1);
     this.scene_changed = true;
 };
 

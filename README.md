@@ -8,3 +8,5 @@ Why would you use a logic simulator written in Javascript for cry'in out loud!?!
 
 Use somthing written in a real mans language like php!
 
+Anyways, play with it here: https://john314thegeekygenius.github.io/logical/
+

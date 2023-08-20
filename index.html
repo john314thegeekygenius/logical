@@ -27,7 +27,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Logical</title>
+        <title id="title-tab">Logical</title>
         <link rel="stylesheet" href="css/style-dark.css"></link>
         <link rel="stylesheet" href="css/jquery-ui.css"></link><!-- code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css -->
         <!-- Load some javascript -->
@@ -44,7 +44,10 @@
             <button id="savefile" class="menu-item" onclick="SaveCircuit()">Save</button>
             <button id="printpage" class="menu-item" onclick="PrintCircuit()">Print</button>
             <span id="prj_title" class="menu-text"></span>
-            <input type="range" class="menu-slider" id="sim-speed" name="simulation_speed" min="1" max="500" onchange="SetSimSpeed(this)"> 25 ms</label>
+            <input type="range" value="25" class="menu-slider" id="sim-speed" name="simulation_speed" min="1" max="500" oninput="SetSimSpeed(this.value)"></input>
+            <p id="sim-readout" class="menu-text">25ms</p>
+            <span class="menu-spacer"></span>
+            <button id="sim-state" class="menu-item" onclick="SimState()">Stop</button>
         </div>
         <!-- Create a tab bar at the top -->
         <div class="tab-bar" id="tabs-list">
