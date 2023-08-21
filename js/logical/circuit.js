@@ -85,7 +85,7 @@ function Gate(info){
     this.y = info.y;
     this.cat = info.cat;
     this.key = info.key;
-    this.box = info.key;
+    this.box = info.box;
     this.rot = info.rot;
     this.selected = info.selected;
     this.hover = info.hover;
