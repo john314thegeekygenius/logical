@@ -89,6 +89,7 @@ function Gate(info){
     this.rot = info.rot;
     this.selected = info.selected;
     this.hover = info.hover;
+    this.state = 0; // What state is the gate in 
     // Any and all gates should have internal 
     // logic code (even simple ones?)
     //this.type = FindGateType(this.cat, this.key);
@@ -143,7 +144,7 @@ Circuit.prototype.deleteGate = function(key){
     this.gates.splice(key,1);
 };
 Circuit.prototype.getWire = function(wire_uuid){
-    return this.wires.find((element) => element.wire === wire_uuid);
+    return this.wires.find((element) => element.name === wire_uuid);
 };
 Circuit.prototype.linkWires = function(w1_id, w2_id){
     var w1 = this.getWire(w1_id);
@@ -156,11 +157,44 @@ Circuit.prototype.linkWires = function(w1_id, w2_id){
 Circuit.prototype.step = function(){
     // TODO:
     // Simulate here 
-    this.sim_tick += 1;
-    if((this.sim_tick % 100)==0){
-        if(this.gates.length){
-            console.log(this);
+    for(var i = 0; i < this.gates.length; i++){
+        var g = this.gates[i];
+        for(var e = 0; e < g.inputs.length; e++){
+            var wname = g.inputs[e].wire;
+            if(wname === "") continue;
+            var w = this.getWire(wname);
+            if(w.cur_state === 1){
+                g.state = 1;
+            }else{
+                g.state = 0;
+            }
+        }
+        for(var e = 0; e < g.outputs.length; e++){
+            var wname = g.outputs[e].wire;
+            if(wname === "") continue;
+            var w = this.getWire(wname);
+            // Logic goes here??? 
+            if(g.key === "button"){
+                w.next_state = Math.floor(Math.random()*2);
+            }else{
+                w.next_state = g.state;
+            }
         }
     }
+    // Update the wires now
+    for(var i = 0; i < this.wires.length; i++){
+        var w = this.wires[i];
+        for(var e = 0; e < w.links.length; e++){
+            var w2 = this.getWire(w.links[e]);
+            w2.cur_state = w.cur_state;
+            // TODO:
+            // Make this do somthing when bad wire states???
+        }
+        // Advance the states 
+        w.prev_state = w.cur_state;
+        w.cur_state = w.next_state;
+    }
+
+    this.sim_tick += 1;
 };
 

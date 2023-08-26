@@ -152,6 +152,30 @@ Logical.prototype.placerHandler = function(){
     return false;
 };
 
+Logical.prototype.hIO_Point = function(io,e, g){
+    var page = this.pages[this.cur_page];
+    // If we are already holding a wire, connect it 
+    var w = page.circuit.addWire({}); // Spawn an empty wire 
+    console.log(w);
+    console.log(this.c_wire);
+    if(this.c_wire.io === 'o'){
+        if(g.addInput(w.name, e/2)){ // Link the wire instead 
+            w.Link(io[e/2].wire);
+        }
+        var g2 = page.circuit.gates[this.c_wire.gate];
+        g2.addOutput(w.name,this.c_wire.id);
+    }
+    else if(this.c_wire.io === 'i'){
+        if(g.addOutput(w.name, e/2)){ // Link the wire instead 
+            w.Link(io[e/2].wire);
+        }
+        var g2 = page.circuit.gates[this.c_wire.gate];
+        g2.addInput(w.name,this.c_wire.id);
+    }
+
+    this.c_wire = null;
+};
+
 Logical.prototype.mouseGateInteract= function(){
     var gs = 400*this.camera.zoom;
     var page = this.pages[this.cur_page];
@@ -202,28 +226,18 @@ Logical.prototype.mouseGateInteract= function(){
                         skipdrag = true;
                     }
                     if(g_mouse.clicked){
-                        // If we are already holding a wire, connect it 
                         if(this.c_wire !== null){
-                            var w = page.circuit.addWire({}); // Spawn an empty wire 
-                            console.log(w);
-                            if(g.addInput(w.name, e/2)){
-                                // Link the wire instead 
-                                w.Link(g.inputs[e/2].wire);
-                            }
-                            var g2 = page.circuit.gates[this.c_wire.gate];
-                            g2.addOutput(w.name,this.c_wire.id);
-
-                            this.c_wire = null;
-
+                            this.hIO_Point(g.inputs, e, g);
                         }else{
                             // We clicked to make a wire, so store it
                             this.c_wire = {
                                 gate:i, 
                                 io:'i', 
                                 id:e/2,
-                                x:gitem.outputs[e]+g.x,
-                                y:gitem.outputs[e+1]+g.y
+                                x:gitem.inputs[e]+g.x,
+                                y:gitem.inputs[e+1]+g.y
                             };
+                            console.log(gitem.inputs);
                             console.log(this.c_wire);
                         }
                     }
@@ -250,26 +264,18 @@ Logical.prototype.mouseGateInteract= function(){
                     if(g_mouse.clicked){
                         // If we are already holding a wire, connect it 
                         if(this.c_wire !== null){
-                            var w = page.circuit.addWire({}); // Spawn an empty wire 
-                            console.log(w);
-                            if(g.addOutput(w.name, e/2)){
-                                // Link the wire instead 
-                                w.Link(g.inputs[e/2].wire);
-                            }
-                            var g2 = page.circuit.gates[this.c_wire.gate];
-                            g2.addInput(w.name,this.c_wire.id);
-
-                            this.c_wire = null;
+                            this.hIO_Point(g.outputs, e, g);
                         }else{
                             // We clicked to make a wire, so store it
                             this.c_wire = {
                                 gate:i, 
                                 io:'o', 
                                 id:e/2,
-                                x:gitem.outputs[e]+g.x,
-                                y:gitem.outputs[e+1]+g.y
+                                x:gitem.outputs[e]+(g.x*10),
+                                y:gitem.outputs[e+1]+(g.y*10)
                             };
                         }
+                        console.log(gitem.outputs);
                         console.log(this.c_wire);
                     }
                 }
@@ -433,6 +439,7 @@ Logical.prototype.handleInput = function(){
             this.grabbed = [];
             this.scene_changed = true;
             this.modified = true;
+            this.c_wire = null;
         }
         if(g_mouse.clicked || !g_mouse.pressed){
             this.camera.cx = this.camera.x;
@@ -535,7 +542,7 @@ Logical.prototype.getItem = function(catagory, tag){
     return item;
 };
 
-Logical.prototype.drawSVG = function(catagory,tag,x, y, rot){
+Logical.prototype.drawSVG = function(catagory,tag,x, y, rot,data){
     if( gate_json_list === undefined){
         console.error("Gates not loaded?");
         return;
@@ -577,6 +584,13 @@ Logical.prototype.drawSVG = function(catagory,tag,x, y, rot){
             px += tx; py += ty;
             if(p[0]==="frect"){
                 this.svg.fill(g_col_3);
+                if(tag === "led"){
+                    if(data === 1){
+                        this.svg.fill(255,0,0);
+                    }else{
+                        this.svg.fill(0,0,0);
+                    }
+                }
             }else{
                 this.svg.noFill();
             }
@@ -654,7 +668,7 @@ Logical.prototype.draw = function(){
         if(g.selected){
             this.svg.strokeDash(true);
         }
-        this.drawSVG(g.cat,g.key,g.x*gs,g.y*gs,g.rot);
+        this.drawSVG(g.cat,g.key,g.x*gs,g.y*gs,g.rot,g.state);
         this.svg.strokeDash(false);
         if(g.selected === true || g.hover){
             var px = g.x*gs 
@@ -741,6 +755,10 @@ Logical.prototype.draw = function(){
         var ioy = (this.c_wire.y*ts)+this.camera.y;
         var mx = g_mouse.x;
         var my = g_mouse.y;
+        var ios = ts*8;
+        if(ios < 5) ios = 5;
+        iox -= ios/2;
+        ioy -= ios/2;
         this.svg.stroke(255,0,0);
         this.svg.line(iox/this.svg.p_width,ioy/this.svg.p_height,mx/this.svg.p_width,my/this.svg.p_height);
 
