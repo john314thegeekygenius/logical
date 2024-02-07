@@ -2,7 +2,7 @@
 
 Please don't use this. It's not any good yet, and I don't think I'll ever finish it.
 
-But if you really want, install npm and host it with `http-server` or somthing idk.
+But if you really want, install npm and host it with `http-server` or something idk.
 
 Why would you use a logic simulator written in Javascript for cry'in out loud!?!
 

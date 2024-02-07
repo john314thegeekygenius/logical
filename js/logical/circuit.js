@@ -176,6 +176,8 @@ Circuit.prototype.step = function(){
             // Logic goes here??? 
             if(g.key === "button"){
                 w.next_state = Math.floor(Math.random()*2);
+            }else if(g.key === "vcc"){
+                w.next_state = 1;
             }else{
                 w.next_state = g.state;
             }

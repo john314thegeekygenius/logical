@@ -42,6 +42,7 @@ Logical.prototype.NukeProject = function(){
     this.hov_wire = null;
     this.c_wire = null;
     this.dragging = false;
+    this.wire_links = [];
     // Page copies 
     this.camera = {};
     this.selected = [];
@@ -156,14 +157,16 @@ Logical.prototype.hIO_Point = function(io,e, g){
     var page = this.pages[this.cur_page];
     // If we are already holding a wire, connect it 
     var w = page.circuit.addWire({}); // Spawn an empty wire 
-    console.log(w);
-    console.log(this.c_wire);
+    //console.log(w);
+    //console.log(this.c_wire);
     if(this.c_wire.io === 'o'){
         if(g.addInput(w.name, e/2)){ // Link the wire instead 
             w.Link(io[e/2].wire);
         }
         var g2 = page.circuit.gates[this.c_wire.gate];
         g2.addOutput(w.name,this.c_wire.id);
+        // Push onto links stack
+        this.wire_links.push([g,g2,w]);
     }
     else if(this.c_wire.io === 'i'){
         if(g.addOutput(w.name, e/2)){ // Link the wire instead 
@@ -171,6 +174,8 @@ Logical.prototype.hIO_Point = function(io,e, g){
         }
         var g2 = page.circuit.gates[this.c_wire.gate];
         g2.addInput(w.name,this.c_wire.id);
+        // Push onto links stack
+        this.wire_links.push([g,g2,w]);
     }
 
     this.c_wire = null;
@@ -234,11 +239,9 @@ Logical.prototype.mouseGateInteract= function(){
                                 gate:i, 
                                 io:'i', 
                                 id:e/2,
-                                x:gitem.inputs[e]+g.x,
-                                y:gitem.inputs[e+1]+g.y
+                                x:gitem.inputs[e]+(g.x*10),
+                                y:gitem.inputs[e+1]+(g.y*10)
                             };
-                            console.log(gitem.inputs);
-                            console.log(this.c_wire);
                         }
                     }
                 }
@@ -275,8 +278,6 @@ Logical.prototype.mouseGateInteract= function(){
                                 y:gitem.outputs[e+1]+(g.y*10)
                             };
                         }
-                        console.log(gitem.outputs);
-                        console.log(this.c_wire);
                     }
                 }
             }
@@ -747,7 +748,12 @@ Logical.prototype.draw = function(){
             this.svg.rect(iox/this.svg.p_width, ioy/this.svg.p_height, ios/12, ios/12);
         }
     }
-    // var gs = 800*this.camera.zoom;
+    // Draw all the connecting wires 
+    for(var e = 0; e < this.wire_links.length; e++){
+        var d = this.wire_links[e];
+        var gx = d[0].x;
+        var gy = d[0].y;
+    }
 
     // Draw a wire to the mouse 
     if(this.c_wire !== null){
